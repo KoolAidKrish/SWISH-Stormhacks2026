@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HandGestureRecognition")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+27e9480f4e35dc9e7c57fda520fffbf44e47d92d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+486f7b84e5a9893a6b905d5cbe6015752ddfd6a6")]
 [assembly: System.Reflection.AssemblyProductAttribute("HandGestureRecognition")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HandGestureRecognition")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
