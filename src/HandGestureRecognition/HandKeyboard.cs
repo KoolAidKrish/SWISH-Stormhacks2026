@@ -115,6 +115,12 @@ public sealed class HandKeyboard : IDisposable
     readonly double[] _values = new double[5];  // latest measurements, for tuning
     readonly HashSet<ushort> _held = new();
     bool _enabled = true;
+    static readonly int[] Tips = { 4, 8, 12, 16, 20 };
+    readonly int[] _frozenFrames = new int[5];
+    const int MaxFrozenFrames = 15; // ~0.5 s at 30 fps, then the finger's key is released
+
+    static bool NearEdge(Point2f p, int w, int h, int margin) =>
+        p.X < margin || p.Y < margin || p.X > w - margin || p.Y > h - margin;
 
     public bool Enabled
     {
@@ -169,13 +175,14 @@ public sealed class HandKeyboard : IDisposable
     }
 
     /// <param name="landmarks">21 landmarks of the keyboard hand, or null if it isn't visible.</param>
-    public void Update(IReadOnlyList<Point2f>? landmarks)
+    public void Update(IReadOnlyList<Point2f>? landmarks, int frameW = 0, int frameH = 0, int margin = 12)
     {
         if (!_enabled || landmarks is null || landmarks.Count < 21)
         {
             ReleaseAll();
             Array.Clear(_down);
             Array.Clear(_candidateCount);
+            Array.Clear(_frozenFrames);
             IsResting = false;
             return;
         }
@@ -185,6 +192,16 @@ public sealed class HandKeyboard : IDisposable
 
         for (int f = 0; f < 5; f++)
         {
+            // Tip (or wrist) at the frame edge: the model is guessing, so keep this finger's last state
+            bool offFrame = frameW > 0 &&
+                (NearEdge(landmarks[Tips[f]], frameW, frameH, margin) || NearEdge(landmarks[0], frameW, frameH, margin));
+            if (offFrame)
+            {
+                if (++_frozenFrames[f] > MaxFrozenFrames) { _down[f] = false; _candidateCount[f] = 0; }
+                continue;
+            }
+            _frozenFrames[f] = 0;
+
             var finger = (Finger)f;
             _values[f] = Measure(landmarks, finger, handSize);
 
