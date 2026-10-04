@@ -19,6 +19,8 @@ public enum MouseMode
 ///   thumb + index pinch  = left button  (hold to drag)
 ///   thumb + middle pinch = right button (hold to keep it pressed)
 ///   thumb on both fingertips = both buttons (e.g. aim + shoot), when simultaneousButtons is on
+///   thumb + ring pinch   = scroll: while held the cursor stays put and moving the hand scrolls
+///                          (up/down, and left/right for sideways scrolling)
 /// In Relative mode, make a fist to "lift the mouse" so you can reposition your hand.
 ///
 /// Smoothness: the camera only updates ~30 times a second. Instead of jumping the cursor
@@ -39,10 +41,12 @@ public sealed class HandMouse : IDisposable
     readonly double _sensitivity, _acceleration;
     readonly double _stickDeadzone, _stickMaxSpeed;
     readonly double _glideSeconds;
+    readonly double _scrollGain;
 
     // Main-thread state
     bool _buttonDown;       // left
     bool _rightDown;
+    bool _scrolling;
     double _freezeUntil;
     bool _enabled = true;
     bool _hasCursor;
@@ -53,6 +57,7 @@ public sealed class HandMouse : IDisposable
     // Shared with the output thread (guarded by _lock)
     readonly object _lock = new();
     double _pendX, _pendY;            // Relative: counts still to be sent
+    double _pendWheelX, _pendWheelY;  // Scroll: wheel units still to be sent
     double _stickVX, _stickVY;        // Joystick: counts per second
     bool _hasTarget;                  // Absolute: where the cursor should end up
     double _targetX, _targetY;
@@ -61,6 +66,7 @@ public sealed class HandMouse : IDisposable
     readonly Thread _thread;
     volatile bool _running = true;
     double _accX, _accY;
+    double _accWheelX, _accWheelY;
     bool _hasOut;
     double _outX, _outY;
     int _lastAx = int.MinValue, _lastAy = int.MinValue;
@@ -69,6 +75,8 @@ public sealed class HandMouse : IDisposable
     public bool IsPinching => _buttonDown;
     public bool IsRightPinching => _rightDown;
     public bool IsClutched { get; private set; }
+    /// <summary>Thumb + ring pinch held: hand movement scrolls instead of moving the cursor.</summary>
+    public bool IsScrolling => _scrolling;
 
     public bool Enabled
     {
@@ -87,13 +95,15 @@ public sealed class HandMouse : IDisposable
     /// False = one button at a time, closer pinch wins (fewer accidental double-clicks on the desktop).</param>
     /// <param name="stickDeadzone">Joystick mode: distance from center (screen px) before turning starts.</param>
     /// <param name="stickMaxSpeed">Joystick mode: turn speed (counts/s) at the edge.</param>
+    /// <param name="scrollGain">Wheel units (120 = one notch) per screen pixel of hand movement while scroll-pinching.</param>
     public HandMouse(CalibrationData calibration,
                      double minCutoff = 0.4, double beta = 0.004, double deadzonePx = 6,
                      double sensitivity = 1.5, double acceleration = 0.0005,
                      double glideSeconds = 0.03,
                      double pinchOn = 0.25, double pinchOff = 0.40, double clickFreezeSeconds = 0.15,
                      bool simultaneousButtons = true,
-                     double stickDeadzone = 120, double stickMaxSpeed = 2500)
+                     double stickDeadzone = 120, double stickMaxSpeed = 2500,
+                     double scrollGain = 2.5)
     {
         _cal = calibration;
         _fx = new OneEuroFilter(minCutoff, beta);
@@ -108,6 +118,7 @@ public sealed class HandMouse : IDisposable
         _clickFreezeSeconds = clickFreezeSeconds;
         _stickDeadzone = stickDeadzone;
         _stickMaxSpeed = stickMaxSpeed;
+        _scrollGain = scrollGain;
 
         _thread = new Thread(OutputLoop) { IsBackground = true, Name = "HandMouse output", Priority = ThreadPriority.AboveNormal };
         _thread.Start();
@@ -181,6 +192,20 @@ public sealed class HandMouse : IDisposable
         // Pinch = left button. Never start a click from a fist.
         double leftPinch = handSize > 1e-3 ? Dist(landmarks[4], landmarks[8]) / handSize : 1.0;   // thumb-index
         double rightPinch = handSize > 1e-3 ? Dist(landmarks[4], landmarks[12]) / handSize : 1.0; // thumb-middle
+        double scrollPinch = handSize > 1e-3 ? Dist(landmarks[4], landmarks[16]) / handSize : 1.0; // thumb-ring
+
+        // Scroll pinch: ends once the fingers are clearly apart (or on a fist); starts only when no button is
+        // held and the ring finger is the one the thumb is touching (so a sloppy click doesn't scroll).
+        if (_scrolling && (scrollPinch >= _pinchOff || IsClutched))
+        {
+            _scrolling = false;
+            _freezeUntil = now + _clickFreezeSeconds;   // don't let the release nudge the cursor
+        }
+        else if (!_scrolling && !IsClutched && !_buttonDown && !_rightDown
+                 && scrollPinch < _pinchOn && scrollPinch < leftPinch && scrollPinch < rightPinch)
+        {
+            _scrolling = true;
+        }
 
         // Releases (hysteresis: let go only once the fingers are clearly apart)
         if (_buttonDown && leftPinch >= _pinchOff)
@@ -196,8 +221,8 @@ public sealed class HandMouse : IDisposable
             _freezeUntil = now + _clickFreezeSeconds;
         }
 
-        // Presses (never from a fist)
-        if (!IsClutched)
+        // Presses (never from a fist, nor while scrolling)
+        if (!IsClutched && !_scrolling)
         {
             bool left = !_buttonDown && leftPinch < _pinchOn;
             bool right = !_rightDown && rightPinch < _pinchOn;
@@ -231,6 +256,14 @@ public sealed class HandMouse : IDisposable
 
         lock (_lock)
         {
+            if (_scrolling)
+            {
+                // Hand up = scroll up (wheel is positive upwards, screen y grows downwards); right = scroll right.
+                _pendWheelY += -moveY * _scrollGain;
+                _pendWheelX += moveX * _scrollGain;
+                _stickVX = _stickVY = 0;   // the cursor itself stays put
+                return;
+            }
             switch (Mode)
             {
                 case MouseMode.Relative:
@@ -297,7 +330,7 @@ public sealed class HandMouse : IDisposable
                 if (dt <= 0) continue;
 
                 double a = 1 - Math.Exp(-dt / _glideSeconds); // fraction of the remaining distance to cover this tick
-                int mx, my;
+                int mx, my, wheelX, wheelY;
                 bool moveAbs = false;
                 int ax = 0, ay = 0;
 
@@ -307,6 +340,16 @@ public sealed class HandMouse : IDisposable
                     double sy = _pendY * a + _stickVY * dt;
                     _pendX -= _pendX * a;
                     _pendY -= _pendY * a;
+
+                    // Scrolling glides out the same way, so it's smooth rather than one jump per camera frame.
+                    _accWheelX += _pendWheelX * a;
+                    _accWheelY += _pendWheelY * a;
+                    _pendWheelX -= _pendWheelX * a;
+                    _pendWheelY -= _pendWheelY * a;
+                    wheelX = (int)_accWheelX;
+                    wheelY = (int)_accWheelY;
+                    _accWheelX -= wheelX;
+                    _accWheelY -= wheelY;
 
                     if (_hasTarget)
                     {
@@ -334,6 +377,8 @@ public sealed class HandMouse : IDisposable
                 }
 
                 if (mx != 0 || my != 0) NativeMouse.MoveRelative(mx, my);
+                if (wheelY != 0) NativeMouse.Wheel(wheelY);
+                if (wheelX != 0) NativeMouse.Wheel(wheelX, horizontal: true);
 
                 // Only move when the position changes, so a still hand doesn't fight a real mouse
                 if (moveAbs && (ax != _lastAx || ay != _lastAy))
@@ -355,6 +400,7 @@ public sealed class HandMouse : IDisposable
         lock (_lock)
         {
             _pendX = _pendY = 0;
+            _pendWheelX = _pendWheelY = 0;
             _stickVX = _stickVY = 0;
             _hasTarget = false;
         }
@@ -370,6 +416,7 @@ public sealed class HandMouse : IDisposable
 
     public void Release()
     {
+        _scrolling = false;
         if (_buttonDown)
         {
             NativeMouse.LeftUp();

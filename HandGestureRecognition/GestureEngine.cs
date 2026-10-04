@@ -762,6 +762,7 @@ public sealed class GestureEngine : IDisposable
                 {
                     _mouse.Update(mouseInput, now);
                     string status = !_mouse.Enabled ? "MOUSE:OFF"
+                        : _mouse.IsScrolling ? "MOUSE:SCROLL"
                         : _mouse.IsPinching && _mouse.IsRightPinching ? "MOUSE:LEFT+RIGHT"
                         : _mouse.IsPinching ? "MOUSE:LEFT CLICK"
                         : _mouse.IsRightPinching ? "MOUSE:RIGHT CLICK"

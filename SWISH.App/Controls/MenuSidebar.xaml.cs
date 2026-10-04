@@ -109,8 +109,8 @@ public partial class MenuSidebar : UserControl
     }
 
     void OnMoreGames(object sender, RoutedEventArgs e) =>
-        SwishDialog.Inform(Window.GetWindow(this), "MORE GAMES",
-            "Adding your own games is coming soon. For now SWISH ships with Minecraft, Aimlabs, Rocket League and Bloons TD 6.");
+        SwishDialog.Inform(Window.GetWindow(this), "MORE",
+            "Adding your own games and apps is coming soon. For now SWISH ships with Desktop, Minecraft, Aimlabs, Rocket League and Bloons TD 6.");
 
     void OnPause(object sender, RoutedEventArgs e)
     {
@@ -219,7 +219,7 @@ public partial class MenuSidebar : UserControl
     }
 
     static Brush Placeholder(int order) => new LinearGradientBrush(
-        (Color)ColorConverter.ConvertFromString(order switch { 1 => "#3E6B2F", 2 => "#2E3E7A", 3 => "#1F4E7A", _ => "#6A3A2A" }),
+        (Color)ColorConverter.ConvertFromString(order switch { 0 => "#00566E", 1 => "#3E6B2F", 2 => "#2E3E7A", 3 => "#1F4E7A", _ => "#6A3A2A" }),
         (Color)ColorConverter.ConvertFromString("#1E1E1E"), 0);
 
     /// <summary>An image from SWISH.App/Assets, or null if it hasn't been supplied (callers show a placeholder).</summary>

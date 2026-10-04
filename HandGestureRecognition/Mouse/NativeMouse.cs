@@ -11,6 +11,8 @@ public static class NativeMouse
     const uint MOUSEEVENTF_LEFTUP = 0x0004;
     const uint MOUSEEVENTF_RIGHTDOWN = 0x0008;
     const uint MOUSEEVENTF_RIGHTUP = 0x0010;
+    const uint MOUSEEVENTF_WHEEL = 0x0800;
+    const uint MOUSEEVENTF_HWHEEL = 0x1000;
 
     [StructLayout(LayoutKind.Sequential)]
     struct MOUSEINPUT
@@ -67,6 +69,20 @@ public static class NativeMouse
         };
         SendInput(1, inputs, Marshal.SizeOf<INPUT>());
     }
+    /// <summary>
+    /// Scrolls like a mouse wheel. 120 = one notch; smaller amounts give smooth scrolling in apps that
+    /// support it. Positive = up (or right, when horizontal).
+    /// </summary>
+    public static void Wheel(int delta, bool horizontal = false)
+    {
+        if (delta == 0) return;
+        var inputs = new[]
+        {
+            new INPUT { type = INPUT_MOUSE, mi = new MOUSEINPUT { mouseData = unchecked((uint)delta), dwFlags = horizontal ? MOUSEEVENTF_HWHEEL : MOUSEEVENTF_WHEEL } },
+        };
+        SendInput(1, inputs, Marshal.SizeOf<INPUT>());
+    }
+
     public static void LeftDown() => Send(MOUSEEVENTF_LEFTDOWN);
     public static void LeftUp() => Send(MOUSEEVENTF_LEFTUP);
     public static void RightDown() => Send(MOUSEEVENTF_RIGHTDOWN);
