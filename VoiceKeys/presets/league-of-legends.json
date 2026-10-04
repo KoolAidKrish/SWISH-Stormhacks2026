@@ -1,0 +1,95 @@
+{
+  "name": "League of Legends",
+  "switchPhrases": [ "league mode", "league of legends", "league" ],
+  "include": [ "gestures" ],     // voice control for the hand-gesture app, see gestures.json
+  "announce": "League mode",
+  "speakByDefault": false,       // no voice confirmations mid-game
+
+  // League of Legends default keyboard bindings:
+  //   Q W E R abilities · D F summoner spells · 1 2 3 5 6 7 items · 4 trinket/ward
+  //   P shop · Tab scoreboard (hold) · Y camera lock · Space center camera (hold) · F1 select self
+  //   Ctrl+1..4 joke/taunt/dance/laugh
+  // Assumed from older defaults, check in-game if they don't respond: B recall, A attack move,
+  //   S stop, Ctrl+Q/W/E/R level up, Ctrl+6 mastery emote.
+  //
+  // Pairs with hand gestures: your right hand is the mouse. Pinch thumb + middle finger to
+  // right-click (move), thumb + index to left-click (target/select). Voice casts.
+  // Works best with Quick Cast on (Settings > Hotkeys): the ability fires at your cursor when
+  // you say it. With Normal Cast, say the ability, then pinch to aim/confirm.
+  // The left-hand keyboard (Ctrl+Alt+K) presses Space/D/W/A/S, which are League keys too, so
+  // you'll probably want it off here.
+
+  "modifiers": [
+    { "say": [ "long", "full", "big", "more" ],                                                    "scale": 2.0 },
+    { "say": [ "short", "quick", "little", "a little", "bit", "a bit", "half" ],                   "scale": 0.4 },
+    { "say": [ "really", "very", "super", "extra" ],                                               "intensify": 1.7 }
+  ],
+  "minMs": 30,
+  "maxMs": 4000,
+
+  "commands": [
+
+    // ---- Abilities. Letter names come back from speech-to-text in different spellings, so several are listed.
+    //      Tested through ElevenLabs: "Q", "E", "D", "F" come through on their own; a lone "W" or "R" often
+    //      doesn't ("R" tends to become "Ah"), so say "dub" / "double you" and "ult" for those. ----
+    { "say": [ "q", "queue", "cue", "ability one" ],                 "keys": [ "q" ] },
+    { "say": [ "w", "double you", "dub", "ability two" ],            "keys": [ "w" ] },
+    { "say": [ "e", "ee", "ability three" ],                         "keys": [ "e" ] },
+    { "say": [ "r", "are", "ult", "ultimate", "ulti" ],              "keys": [ "r" ] },
+
+    // Said quickly, letter runs come back as one word ("QWER."), so the common ones are listed whole.
+    { "say": [ "qwer", "full combo" ],                               "keys": [ "q", "w", "e", "r" ] },
+    { "say": [ "qwe" ],                                              "keys": [ "q", "w", "e" ] },
+    { "say": [ "eqw" ],                                              "keys": [ "e", "q", "w" ] },
+
+    // Charged/channelled abilities (Varus Q, Xerath Q, Vi Q, Pyke Q...): held, scale with modifiers.
+    //   "charge q" = 1 s, "short charge q" = 0.4 s, "full charge q" = 2 s
+    { "say": [ "charge q", "hold q", "charge queue" ],               "baseMs": 1000, "do": [ "hold q {ms}" ] },
+    { "say": [ "charge w", "hold w" ],                               "baseMs": 1000, "do": [ "hold w {ms}" ] },
+    { "say": [ "charge e", "hold e" ],                               "baseMs": 1000, "do": [ "hold e {ms}" ] },
+    { "say": [ "charge r", "hold r", "charge ult", "channel ult" ],  "baseMs": 1000, "do": [ "hold r {ms}" ] },
+
+    // ---- Summoner spells (D and F). Flash is on D for most players; swap these if yours differ. ----
+    { "say": [ "flash", "d", "summoner one" ],                       "keys": [ "d" ] },
+    { "say": [ "f", "summoner two", "ignite", "heal", "teleport", "smite", "exhaust",
+               "barrier", "ghost", "cleanse" ],                      "keys": [ "f" ] },
+
+    // ---- Items and ward ----
+    { "say": [ "item one", "item 1" ],                               "keys": [ "1" ] },
+    { "say": [ "item two", "item 2" ],                               "keys": [ "2" ] },
+    { "say": [ "item three", "item 3" ],                             "keys": [ "3" ] },
+    { "say": [ "item four", "item 4" ],                              "keys": [ "5" ] },
+    { "say": [ "item five", "item 5" ],                              "keys": [ "6" ] },
+    { "say": [ "item six", "item 6" ],                               "keys": [ "7" ] },
+    { "say": [ "ward", "trinket", "place ward" ],                    "keys": [ "4" ] },
+
+    // ---- Moving and attacking (moving itself is a right-click: pinch thumb + middle finger) ----
+    { "say": [ "attack move", "attack" ],                            "do": [ "tap a", "wait 30", "tap lmb 40" ] },
+    { "say": [ "stop", "hold" ],                                     "keys": [ "s" ] },
+    { "say": [ "recall", "base", "go home" ],                        "keys": [ "b" ] },
+
+    // ---- Leveling up ----
+    { "say": [ "level q", "level up q", "level queue" ],             "keys": [ "ctrl+q" ] },
+    { "say": [ "level w", "level up w" ],                            "keys": [ "ctrl+w" ] },
+    { "say": [ "level e", "level up e" ],                            "keys": [ "ctrl+e" ] },
+    { "say": [ "level r", "level up r", "level ult", "level ultimate" ], "keys": [ "ctrl+r" ] },
+
+    // ---- Camera and interface ----
+    { "say": [ "lock camera", "unlock camera", "camera lock" ],      "keys": [ "y" ] },
+    { "say": [ "center camera", "center", "look at me" ],            "baseMs": 1000, "do": [ "hold space {ms}" ] },
+    { "say": [ "select self", "camera self" ],                       "keys": [ "f1" ] },
+    { "say": [ "shop", "open shop", "close shop" ],                  "keys": [ "p" ] },
+    { "say": [ "scoreboard", "scores", "score" ],                    "baseMs": 2000, "do": [ "hold tab {ms}" ] },
+    { "say": [ "chat", "open chat" ],                                "keys": [ "enter" ] },
+    { "say": [ "all chat" ],                                         "keys": [ "shift+enter" ] },
+    { "say": [ "send" ],                                             "keys": [ "enter" ] },
+    { "say": [ "menu", "escape" ],                                   "keys": [ "esc" ] },
+
+    // ---- Emotes ----
+    { "say": [ "joke" ],                                             "keys": [ "ctrl+1" ] },
+    { "say": [ "taunt" ],                                            "keys": [ "ctrl+2" ] },
+    { "say": [ "dance" ],                                            "keys": [ "ctrl+3" ] },
+    { "say": [ "laugh" ],                                            "keys": [ "ctrl+4" ] },
+    { "say": [ "mastery", "flex", "show mastery" ],                  "keys": [ "ctrl+6" ] }
+  ]
+}

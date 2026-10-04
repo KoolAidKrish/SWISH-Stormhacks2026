@@ -40,7 +40,8 @@ public sealed class ScribeClient : IAsyncDisposable
         else
         {
             q.Add("commit_strategy=vad");
-            q.Add($"vad_silence_threshold_secs={s.VadSilenceSecs.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+            var silence = Math.Clamp(s.VadSilenceSecs, 0.3, 3.0); // the API rejects the session outside this range
+            q.Add($"vad_silence_threshold_secs={silence.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
         }
         if (!string.IsNullOrWhiteSpace(s.LanguageCode))
             q.Add($"language_code={Uri.EscapeDataString(s.LanguageCode)}");
@@ -51,7 +52,9 @@ public sealed class ScribeClient : IAsyncDisposable
             foreach (var term in keyterms
                 .SelectMany(p => p.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                 .Select(w => w.ToLowerInvariant())
-                .Where(w => w.Length > 1)
+                // Single letters are kept (game keys like "q", "e", "r" need the hint most), except
+                // "a" and "i", which are ordinary words.
+                .Where(w => w.Length > 1 || (char.IsLetter(w[0]) && w is not "a" and not "i"))
                 .Distinct()
                 .Take(MaxKeyterms))
                 q.Add($"keyterms={Uri.EscapeDataString(term)}");

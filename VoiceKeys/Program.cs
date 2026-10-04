@@ -71,23 +71,35 @@ if (selftestArg >= 0)
         var firstPartialMs = -1L;
         var clock = System.Diagnostics.Stopwatch.StartNew();
         stt.PartialTranscript += t => { if (firstPartialMs < 0 && t.Length > 0) firstPartialMs = clock.ElapsedMilliseconds; };
-        stt.CommittedTranscript += t => done.TrySetResult(t);
+        long committedAt = -1;
+        stt.CommittedTranscript += t => { committedAt = clock.ElapsedMilliseconds; done.TrySetResult(t); };
         stt.Error += (type, details) => done.TrySetException(new Exception($"{type}: {details}"));
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-        await stt.ConnectAsync(apiKey, cfg.Scribe, manualCommit: true, matcher.AllPhrases, timeout.Token);
+        var ptt = cfg.PushToTalk;
+        await stt.ConnectAsync(apiKey, cfg.Scribe, manualCommit: ptt.Enabled, matcher.AllPhrases, timeout.Token);
         var run = stt.RunAsync(timeout.Token);
 
-        // Feed it in real time, 50 ms chunks, then commit like a push-to-talk release.
+        // Feed it in real time, 50 ms chunks, the way the configured mode would:
+        //   push-to-talk  pad with the silence it adds (prerollMs before, tailMs after), then commit like a release
+        //   open mic      trail off into silence and let ElevenLabs' voice detection commit it
+        int lead = MicCapture.SampleRate * 2 * (ptt.Enabled ? ptt.PrerollMs : 300) / 1000;
+        int speechEnd = lead + pcm.Length;
+        pcm = new byte[lead]
+            .Concat(pcm)
+            .Concat(new byte[MicCapture.SampleRate * 2 * (ptt.Enabled ? ptt.TailMs : 1500) / 1000])
+            .ToArray();
         int chunk = MicCapture.SampleRate / 20 * 2;
         clock.Restart();
+        long speechEndMs = -1;
         for (int off = 0; off < pcm.Length; off += chunk)
         {
+            if (speechEndMs < 0 && off >= speechEnd) speechEndMs = clock.ElapsedMilliseconds;
             stt.SendAudio(pcm[off..Math.Min(off + chunk, pcm.Length)]);
             await Task.Delay(50);
         }
         var audioEndMs = clock.ElapsedMilliseconds;
-        stt.SendAudio(new byte[320], commit: true);
+        if (ptt.Enabled) stt.SendAudio(new byte[320], commit: true);
 
         try
         {
@@ -95,7 +107,9 @@ if (selftestArg >= 0)
             var result = matcher.Match(text, paused: false);
             Console.WriteLine($"said \"{phrase}\" → heard \"{text}\" → " + (result is MatchResult.Commands c
                 ? string.Join("  |  ", c.Items.Select(i => i.Describe())) : result.GetType().Name));
-            Console.WriteLine($"   first partial {firstPartialMs} ms into audio · committed {clock.ElapsedMilliseconds - audioEndMs} ms after release");
+            Console.WriteLine(ptt.Enabled
+                ? $"   first partial {firstPartialMs} ms into audio · committed {clock.ElapsedMilliseconds - audioEndMs} ms after release"
+                : $"   first partial {firstPartialMs} ms into audio · committed {committedAt - speechEndMs} ms after you stopped speaking");
         }
         catch (Exception ex) { Console.WriteLine($"said \"{phrase}\" → FAILED: {ex.Message}"); }
     }
