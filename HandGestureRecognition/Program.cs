@@ -237,7 +237,7 @@ internal static class Program
                 }
                 if (key == 'c' && calibrator is null)
                 {
-                    mouse?.Release();
+                    mouse?.Dispose();   // stops its output thread too
                     mouse = null;
                     if (showWindow)
                     {
@@ -569,7 +569,7 @@ internal static class Program
         }
         finally
         {
-            mouse?.Release();        // let go of the mouse button first
+            mouse?.Dispose();        // let go of the mouse button and stop the output thread
             calibrator?.Dispose();   // close the calibration window before DestroyAllWindows
             image?.Dispose();
             videoWriter.Release();
@@ -583,10 +583,11 @@ internal static class Program
     /// <summary>All mouse tuning lives here; used at startup and after every calibration.</summary>
     private static HandMouse CreateMouse(CalibrationData calib) =>
         new HandMouse(calib,
-            sensitivity: 0.5,      // cursor speed (try 1.0 - 3.0)
-            acceleration: 0,  // extra speed for fast flicks (0 = off)
-            minCutoff: 0.4,        // smoothing at rest (lower = steadier, laggier)
-            deadzonePx: 6);        // wobble ignored while holding still
+            sensitivity: 1,      // cursor speed (try 1.0 - 3.0)
+            acceleration: 0.0005,  // extra speed for fast flicks (0 = off)
+            minCutoff: 0.25,       // smoothing at rest (lower = steadier, laggier)
+            deadzonePx: 8,         // wobble ignored while holding still
+            glideSeconds: 0.03);   // glide between camera frames (higher = silkier, laggier)
 
     // Global hotkeys #########################################################
     [System.Runtime.InteropServices.DllImport("user32.dll")]
