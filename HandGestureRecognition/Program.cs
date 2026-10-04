@@ -156,6 +156,9 @@ internal static class Program
         HandMouse? mouse = calibrator is null ? CreateMouse(calib!) : null;
         var mouseClock = Stopwatch.StartNew();
 
+        // Keyboard control (left hand) ##########################################
+        var keyboard = new HandKeyboard();
+
         const string mainWindow = "Hand Gesture Recognition";
         bool showWindow = args.ShowWindow;
 
@@ -208,6 +211,7 @@ internal static class Program
                 bool toggleWindow = HotkeyPressed('V') || key == 'v';  // Ctrl+Alt+V or v
                 bool toggleMouse = HotkeyPressed('M') || key == 'm';   // Ctrl+Alt+M or m
                 bool cycleMouseMode = HotkeyPressed('J');              // Ctrl+Alt+J
+                bool toggleKeyboard = HotkeyPressed('K');              // Ctrl+Alt+K
 
                 if (quit)
                 {
@@ -235,6 +239,11 @@ internal static class Program
                     mouse.CycleMode();   // Relative -> Absolute -> Joystick
                     Console.WriteLine($"Mouse mode: {mouse.Mode}");
                 }
+                if (toggleKeyboard)
+                {
+                    keyboard.Enabled = !keyboard.Enabled;
+                    Console.WriteLine(keyboard.Enabled ? "Keyboard control ON" : "Keyboard control OFF");
+                }
                 if (key == 'c' && calibrator is null)
                 {
                     mouse?.Dispose();   // stops its output thread too
@@ -258,7 +267,8 @@ internal static class Program
                     Cv2.Flip(image, image, FlipMode.Y); // mirror display
                 }
                 using var debugImage = image.Clone();
-                Point2f[]? mouseLandmarks = null;
+                Point2f[]? mouseLandmarks = null;     // right hand
+                Point2f[]? keyboardLandmarks = null;  // left hand
 
                 // Detection #####################################################
 
@@ -384,9 +394,6 @@ internal static class Program
 
                     if (handLandmarks.Count > 0)
                     {
-                        // First detected hand drives the mouse
-                        mouseLandmarks = handLandmarks[0].Select(p => new Point2f(p.X, p.Y)).ToArray();
-
                         var preProcessedLandmarks = new List<double[]>();
 
                         int zipCount = Min(palmTrackidBoxX1y1s.Count, handLandmarks.Count, rotatedImageSizeLeftrights.Count, notRotateRects.Count);
@@ -412,6 +419,16 @@ internal static class Program
                                 ? sizeLr.LeftHand0OrRightHand1
                                 : 1 - sizeLr.LeftHand0OrRightHand1;
                             string handedness = leftHand0OrRightHand1 == 0 ? "Left " : "Right";
+
+                            // Right hand -> mouse, left hand -> keyboard (first of each wins)
+                            if (leftHand0OrRightHand1 >= 0.5f)
+                            {
+                                mouseLandmarks ??= landmark.Select(p => new Point2f(p.X, p.Y)).ToArray();
+                            }
+                            else
+                            {
+                                keyboardLandmarks ??= landmark.Select(p => new Point2f(p.X, p.Y)).ToArray();
+                            }
                             int textX = Math.Min(Math.Max(notRotateRect.X1, 10), capWidth - 120);
                             int textY = Math.Min(Math.Max(notRotateRect.Y1 - 70, 20), capHeight - 70);
                             PutOutlinedText(debugImage, $"trackid:{trackid} {handedness}", new Point(textX, textY), 0.8);
@@ -559,6 +576,19 @@ internal static class Program
                     PutOutlinedText(debugImage, status, new Point(10, 160), 0.6);
                 }
 
+                // Keyboard control ##############################################
+                keyboard.Update(calibrator is null ? keyboardLandmarks : null); // paused while calibrating
+                string keys = !keyboard.Enabled ? "KEYS:OFF"
+                    : keyboard.IsResting ? "KEYS:REST (fist)"
+                    : keyboard.HeldKeys.Count == 0 ? "KEYS:-"
+                    : "KEYS:" + string.Join("+", keyboard.HeldKeys.Select(HandKeyboard.KeyName));
+                PutOutlinedText(debugImage, keys, new Point(10, 185), 0.6);
+                if (keyboardLandmarks is not null)
+                {
+                    // Live finger readings for tuning thresholds (lower = more folded)
+                    PutOutlinedText(debugImage, keyboard.DebugValues, new Point(10, 210), 0.5);
+                }
+
                 // Display ###################################################
                 if (showWindow && calibrator is null)
                 {
@@ -569,6 +599,7 @@ internal static class Program
         }
         finally
         {
+            keyboard.Dispose();      // release any held keys
             mouse?.Dispose();        // let go of the mouse button and stop the output thread
             calibrator?.Dispose();   // close the calibration window before DestroyAllWindows
             image?.Dispose();
