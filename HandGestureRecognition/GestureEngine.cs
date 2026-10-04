@@ -161,6 +161,26 @@ public sealed class GestureEngine : IDisposable
         if (wasRunning) Start();
     }
 
+    // Rebound built-in gestures (null = defaults). Kept here so a restart (camera/GPU switch) keeps them.
+    private IReadOnlyDictionary<Finger, ushort[]>? _fingerKeys;
+    private ushort[]? _pinchIndexKeys, _pinchMiddleKeys, _pinchRingKeys;
+    private HandKeyboard? _keyboard;
+
+    /// <summary>
+    /// Rebinds the built-in hand controls: the left-hand fingers, and the right-hand pinches (index, middle,
+    /// ring) to virtual-key chords held while the pose is held. Anything not given keeps its default.
+    /// </summary>
+    public void SetHandBindings(IReadOnlyDictionary<Finger, ushort[]>? fingers, ushort[]? pinchIndex, ushort[]? pinchMiddle, ushort[]? pinchRing)
+    {
+        _fingerKeys = fingers;
+        (_pinchIndexKeys, _pinchMiddleKeys, _pinchRingKeys) = (pinchIndex, pinchMiddle, pinchRing);
+        Post(() =>
+        {
+            _keyboard?.SetKeys(_fingerKeys);
+            _mouse?.SetBindings(_pinchIndexKeys, _pinchMiddleKeys, _pinchRingKeys);
+        });
+    }
+
     /// <summary>Moves the hand models to another GPU (or the CPU, with null). Reloads them: tracking pauses briefly.</summary>
     public void SwitchGpu(int? adapter)
     {
@@ -303,7 +323,8 @@ public sealed class GestureEngine : IDisposable
         long frameIndex = 0;
 
         // Keyboard control (left hand) ##########################################
-        var keyboard = new HandKeyboard();
+        var keyboard = new HandKeyboard(_fingerKeys);
+        _keyboard = keyboard;
 
         // Label loading #########################################################
         // (keypoint labels are loaded for parity with the original; it never draws them)
@@ -830,14 +851,18 @@ public sealed class GestureEngine : IDisposable
         _ => new ScreenCalibrator(_screenW, _screenH),
     };
 
-    /// <summary>All mouse tuning lives here; used at startup and after every calibration.</summary>
-    private static HandMouse CreateMouse(CalibrationData calib) =>
-        new HandMouse(calib,
+    /// <summary>All mouse tuning lives here; used at startup and after every calibration. Keeps any rebound pinches.</summary>
+    private HandMouse CreateMouse(CalibrationData calib)
+    {
+        var mouse = new HandMouse(calib,
             sensitivity: 1.5,      // cursor speed (try 1.0 - 3.0)
             acceleration: 0.0005,  // extra speed for fast flicks (0 = off)
             minCutoff: 0.25,       // smoothing at rest (lower = steadier, laggier)
             deadzonePx: 8,         // wobble ignored while holding still
             glideSeconds: 0.03);   // glide between camera frames (higher = silkier, laggier)
+        mouse.SetBindings(_pinchIndexKeys, _pinchMiddleKeys, _pinchRingKeys);
+        return mouse;
+    }
 
     // Global hotkeys #########################################################
     [System.Runtime.InteropServices.DllImport("user32.dll")]

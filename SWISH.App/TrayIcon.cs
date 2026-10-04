@@ -33,7 +33,7 @@ sealed class TrayIcon : IDisposable
 
         _icon = new Forms.NotifyIcon
         {
-            Icon = System.Drawing.SystemIcons.Application,
+            Icon = (Environment.ProcessPath is { } exe ? System.Drawing.Icon.ExtractAssociatedIcon(exe) : null) ?? System.Drawing.SystemIcons.Application,
             Text = "SWISH",
             ContextMenuStrip = menu,
             Visible = true,

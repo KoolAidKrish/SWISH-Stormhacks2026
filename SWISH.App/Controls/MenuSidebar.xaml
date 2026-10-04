@@ -21,7 +21,7 @@
 
     <Grid ClipToBounds="True">
         <!-- Decoration: corner block and a circuit trace down the right edge (drawn to size in code). -->
-        <Polygon Points="0,0 26,0 0,26" Fill="{StaticResource Teal}" IsHitTestVisible="False" />
+        <Polygon Points="0,0 26,0 0,26" Fill="{StaticResource Blue}" IsHitTestVisible="False" />
         <Canvas x:Name="Decor" IsHitTestVisible="False" />
 
         <DockPanel Margin="30,30,30,26">
@@ -33,20 +33,20 @@
                     <StackPanel>
                         <DockPanel>
                             <Ellipse x:Name="HandsDot" Width="8" Height="8" Margin="0,0,9,0" Fill="{StaticResource Dim}" />
-                            <TextBlock Text="HANDS" Style="{StaticResource StatusLabel}" />
+                            <TextBlock x:Name="HandsLabel" Text="HANDS" Style="{StaticResource StatusLabel}" />
                             <TextBlock x:Name="HandsText" Style="{StaticResource StatusLabel}" FontWeight="Normal" Foreground="{StaticResource Muted}"
                                        HorizontalAlignment="Right" />
                         </DockPanel>
                         <DockPanel Margin="0,9,0,0">
                             <Ellipse x:Name="VoiceDot" Width="8" Height="8" Margin="0,0,9,0" Fill="{StaticResource Dim}" />
-                            <TextBlock Text="VOICE" Style="{StaticResource StatusLabel}" />
+                            <TextBlock x:Name="VoiceLabel" Text="VOICE" Style="{StaticResource StatusLabel}" />
                             <TextBlock x:Name="VoiceText" Style="{StaticResource StatusLabel}" FontWeight="Normal" Foreground="{StaticResource Muted}"
                                        HorizontalAlignment="Right" />
                         </DockPanel>
                         <!-- mic level -->
                         <Grid Height="3" Margin="17,8,0,0">
                             <Rectangle Fill="{StaticResource Line}" />
-                            <Rectangle x:Name="LevelBar" Fill="{StaticResource TealText}" HorizontalAlignment="Left" Width="0" />
+                            <Rectangle x:Name="LevelBar" Fill="{StaticResource Pink}" HorizontalAlignment="Left" Width="0" />
                         </Grid>
                         <TextBlock x:Name="HeardText" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Gray}" Margin="17,8,0,0"
                                    TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Text="Say a command…" />

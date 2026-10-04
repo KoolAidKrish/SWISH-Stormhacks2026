@@ -1,0 +1,26 @@
+<UserControl x:Class="Swish.App.Views.TutorialPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent">
+    <!-- Laid out at its natural size and only ever scaled down, so it fits small windows -->
+    <Viewbox StretchDirection="DownOnly" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="34,30,34,26">
+        <StackPanel Width="798">
+            <ContentControl Style="{StaticResource SectionBar}" HorizontalAlignment="Left" FontSize="30" Margin="0,0,0,22">
+                <TextBlock Text="TUTORIAL:" Margin="4,0,150,0" />
+            </ContentControl>
+
+            <!-- One card per desktop gesture; the walkthrough highlights them in turn (built in code) -->
+            <StackPanel x:Name="Cards" Orientation="Horizontal" />
+
+            <!-- A pretend desktop showing what the highlighted gesture does to the cursor (built in code) -->
+            <Grid x:Name="Stage" Height="210" Margin="0,16,0,0" ClipToBounds="True" />
+
+            <TextBlock x:Name="Caption" Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Gray}"
+                       Margin="2,12,0,0" MinHeight="34" AutomationProperties.LiveSetting="Polite" />
+
+            <Button x:Name="ContinueButton" Margin="0,14,0,0" Click="OnContinue" AutomationProperties.Name="Close the tutorial">
+                <TextBlock Text="GOT IT" />
+            </Button>
+        </StackPanel>
+    </Viewbox>
+</UserControl>

@@ -69,27 +69,28 @@ export default function Hero() {
       </svg>
 
       <div className="hero-copy">
-        <p className="eyebrow hero-eyebrow">StormHacks 2026 · SFU</p>
+        <p className="eyebrow hero-eyebrow">StormHacks 2026, SFU</p>
         <h1 className="hero-title" aria-label={TITLE}>
-          {TITLE.split('').map((c, i) => (
-            <span key={i} className="hero-letter" style={{ '--i': i } as CSSProperties} aria-hidden="true">{c}</span>
+          {/* the SW/SH wordmark as stacked layers (S, W, slash, S, H) so each one rises in on its own */}
+          {[0, 1, 2, 3, 4].map(i => (
+            <img key={i} className="hero-letter" src={`/brand/wordmark-${i}.png`} alt="" style={{ '--i': i } as CSSProperties} aria-hidden="true" />
           ))}
         </h1>
         <p className="hero-acronym" aria-label="Serial Wireless Interactive System for Humans">
           {ACRONYM.map((w, i) => (
             <span key={w} style={{ '--i': i } as CSSProperties} aria-hidden="true">
-              {w}{i < ACRONYM.length - 1 && <b> · </b>}
+              {w}{i < ACRONYM.length - 1 && ' '}
             </span>
           ))}
         </p>
         <p className="hero-tagline">A touchless control system<br />for your gaming experience</p>
         <div className="hero-ctas">
-          <a className="btn btn-solid" href="#demo">Try a voice command</a>
-          <a className="btn btn-ghost" href="https://github.com/KoolAidKrish/SWISH-Stormhacks2026" target="_blank" rel="noreferrer">View on GitHub ↗</a>
+          <a className="btn btn-solid" href="#video">Watch the demo</a>
+          <a className="btn btn-ghost" href="#get">Get SWISH</a>
         </div>
       </div>
 
-      <a className="scroll-cue" href="#how" aria-label="Scroll to how it works">
+      <a className="scroll-cue" href="#video" aria-label="Scroll to the demo">
         <span>SCROLL</span>
         <i />
       </a>

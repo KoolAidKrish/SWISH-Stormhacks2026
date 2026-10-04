@@ -50,12 +50,13 @@ public partial class HomePage : UserControl, ISwishPage
 
     void BuildWordmark()
     {
-        foreach (char c in "SWISH")
-            Wordmark.Children.Add(new TextBlock
-            {
-                Text = c.ToString(), Style = (Style)FindResource("Display"), FontSize = 236, LineHeight = 200,
-                LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
-            });
+        // Assets/Brand/wordmark-0..4.png: S, W, the pink slash, S, H, each on the full-size canvas so they line up.
+        for (int i = 0; i < 5; i++)
+        {
+            var layer = new Image { Source = Controls.MenuSidebar.LoadAsset($"Brand/wordmark-{i}.png"), Stretch = Stretch.Uniform };
+            RenderOptions.SetBitmapScalingMode(layer, BitmapScalingMode.HighQuality);
+            Wordmark.Children.Add(layer);
+        }
     }
 
     void Float()
@@ -92,12 +93,12 @@ public partial class HomePage : UserControl, ISwishPage
     // ---- Decorations (drawn in each corner layer's own coordinates) ----
 
     static readonly Brush Pink = (Brush)Application.Current.FindResource("Pink");
-    static readonly Brush Teal = (Brush)Application.Current.FindResource("Teal");
+    static readonly Brush Blue = (Brush)Application.Current.FindResource("Blue");
 
     void BuildDecorations()
     {
-        // Top-left: teal block, two pink X's cut off by the top edge, a pink triangle, a thin pink rule.
-        TopLeft.Children.Add(Poly(Teal, (0, 0), (150, 0), (0, 150)));
+        // Top-left: blue block, two pink X's cut off by the top edge, a pink triangle, a thin pink rule.
+        TopLeft.Children.Add(Poly(Blue, (0, 0), (150, 0), (0, 150)));
         TopLeft.Children.Add(Cross(Pink, 150, 22, 150, 52));
         TopLeft.Children.Add(Cross(Pink, 330, 22, 150, 52));
         TopLeft.Children.Add(Poly(Pink, (40, 150), (175, 150), (40, 280)));
@@ -107,15 +108,15 @@ public partial class HomePage : UserControl, ISwishPage
         TopRight.Children.Add(Ring(Pink, 12, 330, -70, 220));
         TopRight.Children.Add(Ring(Pink, 2.5, 330, -70, 186));
 
-        // Right / bottom-right: teal circuit trace stepping down the right edge, a thin pink trace beside it,
+        // Right / bottom-right: blue circuit trace stepping down the right edge, a thin pink trace beside it,
         // and a large pink triangle in the corner.
-        BottomRight.Children.Add(Trace(Teal, 16, (420, 0), (420, 230), (380, 270), (380, 430), (330, 480), (0, 480)));
+        BottomRight.Children.Add(Trace(Blue, 16, (420, 0), (420, 230), (380, 270), (380, 430), (330, 480), (0, 480)));
         BottomRight.Children.Add(Trace(Pink, 1.5, (395, 0), (395, 220), (355, 260), (355, 420), (310, 465), (0, 465)));
         BottomRight.Children.Add(Poly(Pink, (190, 520), (440, 520), (440, 260)));
 
-        // Bottom-left: teal trace along the bottom with a step, thin pink trace above it.
+        // Bottom-left: blue trace along the bottom with a step, thin pink trace above it.
         // (ends 40 px / 55 px above the bottom, the same heights as the right-hand traces, so they line up)
-        BottomLeft.Children.Add(Trace(Teal, 16, (0, 120), (520, 120), (540, 100), (760, 100)));
+        BottomLeft.Children.Add(Trace(Blue, 16, (0, 120), (520, 120), (540, 100), (760, 100)));
         BottomLeft.Children.Add(Trace(Pink, 1.5, (0, 105), (500, 105), (520, 85), (760, 85)));
 
         // Bottom-centre: a pink X sitting on the bottom edge.

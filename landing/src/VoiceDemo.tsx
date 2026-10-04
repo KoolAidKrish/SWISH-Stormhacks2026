@@ -35,10 +35,12 @@ const COMMANDS: Cmd[] = [
     say: 'turn around', steps: ['down shift', 'hold a 900', 'up shift'],
     segs: [{ key: 'SHIFT', start: 0, end: 900 }, { key: 'A', start: 0, end: 900 }],
   },
-  { say: 'ball cam', steps: ['tap space'], segs: [{ key: 'SPACE', start: 0, end: 60 }] },
+  // plain "keys" taps are held for keyHoldMs (35 ms, settings.json)
+  { say: 'ball cam', steps: ['tap space'], segs: [{ key: 'SPACE', start: 0, end: 35 }] },
+  // gestures.json holds these 150 ms so a camera frame is sure to see the hotkey
   {
-    say: 'mouse mode', steps: ['tap ctrl+alt+j'],
-    segs: [{ key: 'CTRL', start: 0, end: 60 }, { key: 'ALT', start: 0, end: 60 }, { key: 'J', start: 0, end: 60 }],
+    say: 'mouse mode', steps: ['hold ctrl+alt+j 150'],
+    segs: [{ key: 'CTRL', start: 0, end: 150 }, { key: 'ALT', start: 0, end: 150 }, { key: 'J', start: 0, end: 150 }],
   },
   { say: 'stop', steps: ['release'], segs: [], release: true },
 ]
@@ -115,7 +117,7 @@ export default function VoiceDemo() {
   return (
     <div className="demo" data-reveal>
       <div className="demo-left">
-        <p className="demo-label">Rocket League preset · tap a phrase</p>
+        <p className="demo-label">Rocket League preset: tap a phrase</p>
         <div className="chips">
           {COMMANDS.map(c => (
             <button key={c.say} className={`chip ${cmd?.say === c.say ? 'on' : ''}`} onClick={() => run(c)}>
@@ -139,12 +141,12 @@ export default function VoiceDemo() {
             <p><span className="dim">heard ›</span> <span className="heard">{typed}</span><span className="caret" /></p>
             {cmd && t >= 0 && (
               <p className="prog">
-                <span className="dim">do ›</span> {cmd.steps.join('  ·  ')}
+                <span className="dim">do ›</span> {cmd.steps.join(', ')}
               </p>
             )}
             {missed && (
               <p className="miss">
-                <span className="dim">no match ›</span> normal speech doesn't press keys. Every word has to be a command or a modifier.
+                <span className="dim">no match ›</span> normal speech doesn't press keys. Every word has to be part of a command, a modifier or a filler word.
               </p>
             )}
             {!typed && !missed && <p className="dim">waiting for speech…</p>}

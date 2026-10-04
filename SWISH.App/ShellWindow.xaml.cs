@@ -15,6 +15,8 @@ public interface ISwishPage
     bool Fullscreen => false;
     /// <summary>Control that gets keyboard focus first (the primary action), so Enter works straight away.</summary>
     IInputElement? DefaultFocus => null;
+    /// <summary>Menu screens show the small camera view in the corner (unless the user hid it).</summary>
+    bool ShowsCameraCorner => false;
     void OnShown(App app, ShellWindow shell) { }
     void OnHidden() { }
 }
@@ -64,11 +66,13 @@ public partial class ShellWindow : Window
 
     public void Navigate(UserControl page)
     {
+        CloseOverlay();
         _current?.OnHidden();
         Host.Content = page;
         _current = page as ISwishPage;
         SetFullscreen(_current?.Fullscreen == true);
         _current?.OnShown(_app, this);
+        UpdateCameraCorner();
 
         // Put keyboard focus on the page's main action once it's laid out.
         Dispatcher.BeginInvoke(() =>
@@ -76,6 +80,65 @@ public partial class ShellWindow : Window
             if (_current?.DefaultFocus is { } target) Keyboard.Focus(target);
             else page.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
         }, System.Windows.Threading.DispatcherPriority.Input);
+    }
+
+    // ---- Overlay ----
+
+    /// <summary>Pulls <paramref name="content"/> up over the current screen, which stays as it is underneath.</summary>
+    public void ShowOverlay(UserControl content)
+    {
+        CloseOverlay();
+        OverlayHost.Content = content;
+        Overlay.Visibility = Visibility.Visible;
+        var page = content as ISwishPage;
+        page?.OnShown(_app, this);
+        Dispatcher.BeginInvoke(() =>
+        {
+            if (page?.DefaultFocus is { } target) Keyboard.Focus(target);
+            else content.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
+        }, DispatcherPriority.Input);
+    }
+
+    public void CloseOverlay()
+    {
+        if (OverlayHost.Content is null) return;
+        (OverlayHost.Content as ISwishPage)?.OnHidden();
+        OverlayHost.Content = null;
+        Overlay.Visibility = Visibility.Collapsed;
+        if (Host.Content is UserControl page)
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (_current?.DefaultFocus is { } target) Keyboard.Focus(target);
+                else page.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
+            }, DispatcherPriority.Input);
+    }
+
+    void OnOverlayBackdrop(object sender, MouseButtonEventArgs e) => CloseOverlay();
+
+    // ---- Camera corner ----
+
+    void OnHideCamera(object sender, RoutedEventArgs e) => SetCameraCorner(false);
+    void OnShowCamera(object sender, RoutedEventArgs e) => SetCameraCorner(true);
+
+    void SetCameraCorner(bool show)
+    {
+        _app.Settings.ShowCameraCorner = show;
+        _app.Settings.Save(App.DataDir);
+        UpdateCameraCorner();
+    }
+
+    /// <summary>
+    /// Shows the live view on menu screens, or the tab to reopen it. The feed only exists while it's showing:
+    /// it claims the preview frames when added and gives them back when removed, so a hidden view costs nothing.
+    /// </summary>
+    void UpdateCameraCorner()
+    {
+        bool wanted = _current?.ShowsCameraCorner == true && !_isFullscreen;
+        bool show = wanted && _app.Settings.ShowCameraCorner;
+        CameraCorner.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        CameraTab.Visibility = wanted && !show ? Visibility.Visible : Visibility.Collapsed;
+        if (show && CameraHost.Content is null) CameraHost.Content = new Controls.CameraFeedView { ShowSkeleton = true };
+        else if (!show) CameraHost.Content = null;
     }
 
     /// <summary>Re-shows the current page (e.g. after custom functions changed).</summary>

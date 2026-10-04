@@ -70,7 +70,7 @@ public partial class MenuSidebar : UserControl
         _loading = false;
 
         // The settings button reads as "you are here" on the settings screen.
-        SettingsButton.Background = section == MenuSection.Settings ? (Brush)FindResource("Teal") : Brushes.Transparent;
+        SettingsButton.Background = section == MenuSection.Settings ? (Brush)FindResource("Blue") : Brushes.Transparent;
 
         app.Gestures.HandsUpdated += OnHands;
         if (app.Voice is { } voice) { voice.Heard += OnHeard; voice.MicLevel += OnLevel; }
@@ -141,7 +141,7 @@ public partial class MenuSidebar : UserControl
     void ShowStatus()
     {
         if (_app is null) return;
-        Brush success = (Brush)FindResource("Success"), pink = (Brush)FindResource("Pink"), dim = (Brush)FindResource("Dim");
+        Brush pink = (Brush)FindResource("Pink");
         bool paused = _app.IsPaused;
         PauseText.Text = paused ? "▶   RESUME" : "❚❚   PAUSE";
         PauseButton.BorderBrush = PauseText.Foreground = paused ? pink : (Brush)FindResource("White");
@@ -158,34 +158,45 @@ public partial class MenuSidebar : UserControl
         var status = _app.Gestures.Status;
         bool tracking = status.Error is null;
         HandsText.Text = handsOff ? "OFF" : !tracking ? "NO CAMERA" : !status.Running ? "STARTING" : hands == 0 ? "NONE IN VIEW" : hands == 1 ? "1 IN VIEW" : "2 IN VIEW";
-        HandsDot.Fill = handsOff ? pink : !tracking ? (Brush)FindResource("Danger") : hands > 0 ? success : dim;
+        Paint(HandsDot, HandsLabel, HandsText, handsOff ? State.Off : !tracking ? State.Error : !status.Running ? State.Waiting : State.Active);
 
         // Voice
         if (_app.Voice is not { } voice)
         {
             VoiceText.Text = "OFF";
-            VoiceDot.Fill = dim;
+            Paint(VoiceDot, VoiceLabel, VoiceText, State.Off);
             LevelBar.Width = 0;
             HeardText.Text = "No ElevenLabs key set";
             return;
         }
         VoiceText.Text = voice.MicOff ? "MIC OFF" : voice.Paused ? "PAUSED" : !voice.Connected ? "CONNECTING" : "LISTENING";
-        VoiceDot.Fill = voice.MicOff || voice.Paused ? pink : voice.Connected ? success : (Brush)FindResource("Muted");
+        Paint(VoiceDot, VoiceLabel, VoiceText, voice.MicOff || voice.Paused ? State.Off : voice.Connected ? State.Active : State.Waiting);
+        HeardText.Foreground = (Brush)FindResource(voice.MicOff || voice.Paused ? "Dim" : "Gray");
         double width = Math.Max(0, ((FrameworkElement)LevelBar.Parent).ActualWidth);
         LevelBar.Width = width * (voice.Paused || voice.MicOff ? 0 : Math.Clamp(Volatile.Read(ref _level), 0, 1));
         if (Volatile.Read(ref _heard) is { Length: > 0 } heard) HeardText.Text = $"“{heard}”";
     }
 
+    enum State { Active, Waiting, Off, Error }
+
+    /// <summary>One status row: pink while active, greyed out when off or paused, muted while starting, red on an error.</summary>
+    void Paint(System.Windows.Shapes.Ellipse dot, TextBlock label, TextBlock value, State state)
+    {
+        dot.Fill = (Brush)FindResource(state switch { State.Active => "Pink", State.Error => "Danger", State.Waiting => "Muted", _ => "Dim" });
+        label.Foreground = (Brush)FindResource(state == State.Off ? "Dim" : "White");
+        value.Foreground = (Brush)FindResource(state switch { State.Active => "Pink", State.Error => "Danger", State.Waiting => "Muted", _ => "Dim" });
+    }
+
     // ---- Look ----
 
-    /// <summary>Teal line down the right edge with a pink hairline beside it.</summary>
+    /// <summary>Blue line down the right edge with a pink hairline beside it.</summary>
     void DrawDecor()
     {
         Decor.Children.Clear();
         double w = ActualWidth, h = ActualHeight;
         if (h < 200) return;
         // Two straight parallel lines, full height.
-        Decor.Children.Add(Trace((Brush)FindResource("Teal"), 3, (w - 1.5, 0), (w - 1.5, h)));
+        Decor.Children.Add(Trace((Brush)FindResource("Blue"), 3, (w - 1.5, 0), (w - 1.5, h)));
         Decor.Children.Add(Trace((Brush)FindResource("Pink"), 1, (w - 8, 0), (w - 8, h)));
     }
 
@@ -219,7 +230,7 @@ public partial class MenuSidebar : UserControl
     }
 
     static Brush Placeholder(int order) => new LinearGradientBrush(
-        (Color)ColorConverter.ConvertFromString(order switch { 0 => "#00566E", 1 => "#3E6B2F", 2 => "#2E3E7A", 3 => "#1F4E7A", _ => "#6A3A2A" }),
+        (Color)ColorConverter.ConvertFromString(order switch { 0 => "#1761FF", 1 => "#3E6B2F", 2 => "#2E3E7A", 3 => "#1F4E7A", _ => "#6A3A2A" }),
         (Color)ColorConverter.ConvertFromString("#1E1E1E"), 0);
 
     /// <summary>An image from SWISH.App/Assets, or null if it hasn't been supplied (callers show a placeholder).</summary>

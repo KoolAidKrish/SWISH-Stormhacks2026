@@ -48,12 +48,11 @@
         <!-- ===== Title bar ===== -->
         <Grid x:Name="TitleBar" DockPanel.Dock="Top" Height="38" Background="{StaticResource Bg2}">
             <Rectangle Height="1" VerticalAlignment="Bottom" Fill="{StaticResource Line}" />
-            <!-- teal tab under the wordmark -->
-            <c:ChamferShape Width="150" Height="3" VerticalAlignment="Bottom" HorizontalAlignment="Left" Fill="{StaticResource Teal}" Chamfer="3" Corner="TopRight" />
+            <!-- blue tab under the wordmark -->
+            <c:ChamferShape Width="150" Height="3" VerticalAlignment="Bottom" HorizontalAlignment="Left" Fill="{StaticResource Blue}" Chamfer="3" Corner="TopRight" />
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
-                <Path Data="M0,0 L4,0 L5,3 L6,0 L10,0 L7,5 L10,10 L6,10 L5,7 L4,10 L0,10 L3,5 Z" Fill="{StaticResource Pink}" Width="11" Height="11"
-                      Stretch="Fill" VerticalAlignment="Center" Margin="0,0,10,0" />
-                <TextBlock Text="SWISH" Style="{StaticResource Display}" FontSize="18" VerticalAlignment="Center" />
+                <Image Source="/Assets/Brand/wordmark.png" Height="15" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"
+                       AutomationProperties.Name="SWISH" />
                 <TextBlock Text="HANDS + VOICE CONTROL" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Dim}"
                            VerticalAlignment="Center" Margin="14,2,0,0" />
             </StackPanel>
@@ -68,6 +67,35 @@
             </StackPanel>
         </Grid>
 
-        <ContentControl x:Name="Host" Focusable="False" IsTabStop="False" />
+        <Grid>
+            <ContentControl x:Name="Host" Focusable="False" IsTabStop="False" />
+
+            <!-- Camera corner: a small live view (with the hand skeleton) over the bottom-right of menu screens -->
+            <Grid x:Name="CameraCorner" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,22,22"
+                  Width="272" Height="204" Visibility="Collapsed" Background="{StaticResource Bg2}">
+                <ContentControl x:Name="CameraHost" Focusable="False" IsTabStop="False" />
+                <Border BorderBrush="{StaticResource Pink}" BorderThickness="1.6" IsHitTestVisible="False" />
+                <Button HorizontalAlignment="Right" VerticalAlignment="Top" Margin="6" Width="26" Height="26" Padding="0"
+                        Background="#B0101010" BorderBrush="{StaticResource Gray}" BorderThickness="1" Click="OnHideCamera"
+                        ToolTip="Hide the camera" AutomationProperties.Name="Hide camera view">
+                    <TextBlock Text="✕" FontSize="11" />
+                </Button>
+            </Grid>
+            <!-- When it's hidden: a small tab to bring it back -->
+            <Button x:Name="CameraTab" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,22,22" Padding="12,6"
+                    Background="{StaticResource Bg2}" BorderBrush="{StaticResource Pink}" Click="OnShowCamera" Visibility="Collapsed"
+                    ToolTip="Show the camera view" AutomationProperties.Name="Show camera view">
+                <TextBlock Text="▴  CAMERA" FontSize="11" FontWeight="Bold" />
+            </Button>
+
+            <!-- Overlay: a panel pulled up over the current screen (e.g. the tutorial); click outside or Esc to close -->
+            <Grid x:Name="Overlay" Visibility="Collapsed">
+                <Rectangle Fill="#CC000000" MouseLeftButtonDown="OnOverlayBackdrop" />
+                <Grid Margin="40" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <c:ChamferShape Fill="{StaticResource Bg}" Stroke="{StaticResource Pink}" StrokeThickness="1.5" Chamfer="24" Radius="7" Corner="BottomRight" />
+                    <ContentControl x:Name="OverlayHost" Focusable="False" IsTabStop="False" />
+                </Grid>
+            </Grid>
+        </Grid>
     </DockPanel>
 </Window>

@@ -232,9 +232,9 @@ public partial class CalibrationPage : UserControl, ISwishPage
             }
         }
 
-        // The ball: teal with a white ring.
+        // The ball: blue with a white ring.
         _ball = new Grid { Width = 54, Height = 54 };
-        _ball.Children.Add(new Ellipse { Fill = (Brush)FindResource("Teal") });
+        _ball.Children.Add(new Ellipse { Fill = (Brush)FindResource("Blue") });
         _ball.Children.Add(new Ellipse { Stroke = Brushes.White, StrokeThickness = 4.5 });
         PathLayer.Children.Add(_ball);
         var start = ToDip(_path.At(0));

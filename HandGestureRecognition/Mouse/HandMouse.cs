@@ -21,6 +21,7 @@ public enum MouseMode
 ///   thumb on both fingertips = both buttons (e.g. aim + shoot), when simultaneousButtons is on
 ///   thumb + ring pinch   = scroll: while held the cursor stays put and moving the hand scrolls
 ///                          (up/down, and left/right for sideways scrolling)
+/// Each pinch can be rebound to hold other keys instead (<see cref="SetBindings"/>).
 /// In Relative mode, make a fist to "lift the mouse" so you can reposition your hand.
 ///
 /// Smoothness: the camera only updates ~30 times a second. Instead of jumping the cursor
@@ -47,6 +48,8 @@ public sealed class HandMouse : IDisposable
     bool _buttonDown;       // left
     bool _rightDown;
     bool _scrolling;
+    bool _ringDown;          // ring pinch held, when it's bound to keys instead of scrolling
+    ushort[]? _leftKeys, _rightKeys, _ringKeys;   // rebound pinches (null = default: left/right click, scroll)
     double _freezeUntil;
     bool _enabled = true;
     bool _hasCursor;
@@ -75,6 +78,19 @@ public sealed class HandMouse : IDisposable
     public bool IsPinching => _buttonDown;
     public bool IsRightPinching => _rightDown;
     public bool IsClutched { get; private set; }
+    /// <summary>
+    /// Rebinds the pinches to hold virtual keys (a chord, or a mouse button) for as long as they're held;
+    /// null keeps the default (thumb+index left click, thumb+middle right click, thumb+ring scroll).
+    /// Call on the engine thread. Anything held is let go first.
+    /// </summary>
+    public void SetBindings(ushort[]? index, ushort[]? middle, ushort[]? ring)
+    {
+        Release();
+        _leftKeys = index;
+        _rightKeys = middle;
+        _ringKeys = ring;
+    }
+
     /// <summary>Thumb + ring pinch held: hand movement scrolls instead of moving the cursor.</summary>
     public bool IsScrolling => _scrolling;
 
@@ -201,28 +217,34 @@ public sealed class HandMouse : IDisposable
             _scrolling = false;
             _freezeUntil = now + _clickFreezeSeconds;   // don't let the release nudge the cursor
         }
-        else if (!_scrolling && !IsClutched && !_buttonDown && !_rightDown
+        else if (_ringDown && (scrollPinch >= _pinchOff || IsClutched))
+        {
+            NativeInput.Up(_ringKeys!);
+            _ringDown = false;
+        }
+        else if (!_scrolling && !_ringDown && !IsClutched && !_buttonDown && !_rightDown
                  && scrollPinch < _pinchOn && scrollPinch < leftPinch && scrollPinch < rightPinch)
         {
-            _scrolling = true;
+            if (_ringKeys is { } ring) { NativeInput.Down(ring); _ringDown = true; }   // rebound: hold its keys
+            else _scrolling = true;
         }
 
         // Releases (hysteresis: let go only once the fingers are clearly apart)
         if (_buttonDown && leftPinch >= _pinchOff)
         {
-            NativeMouse.LeftUp();
+            LeftUp();
             _buttonDown = false;
             _freezeUntil = now + _clickFreezeSeconds;
         }
         if (_rightDown && rightPinch >= _pinchOff)
         {
-            NativeMouse.RightUp();
+            RightUp();
             _rightDown = false;
             _freezeUntil = now + _clickFreezeSeconds;
         }
 
-        // Presses (never from a fist, nor while scrolling)
-        if (!IsClutched && !_scrolling)
+        // Presses (never from a fist, nor while scrolling or holding the ring pinch)
+        if (!IsClutched && !_scrolling && !_ringDown)
         {
             bool left = !_buttonDown && leftPinch < _pinchOn;
             bool right = !_rightDown && rightPinch < _pinchOn;
@@ -240,13 +262,13 @@ public sealed class HandMouse : IDisposable
 
             if (left)
             {
-                NativeMouse.LeftDown();
+                if (_leftKeys is { } keys) NativeInput.Down(keys); else NativeMouse.LeftDown();
                 _buttonDown = true;
                 _freezeUntil = now + _clickFreezeSeconds;
             }
             if (right)
             {
-                NativeMouse.RightDown();
+                if (_rightKeys is { } keys) NativeInput.Down(keys); else NativeMouse.RightDown();
                 _rightDown = true;
                 _freezeUntil = now + _clickFreezeSeconds;
             }
@@ -417,17 +439,25 @@ public sealed class HandMouse : IDisposable
     public void Release()
     {
         _scrolling = false;
+        if (_ringDown)
+        {
+            NativeInput.Up(_ringKeys!);
+            _ringDown = false;
+        }
         if (_buttonDown)
         {
-            NativeMouse.LeftUp();
+            LeftUp();
             _buttonDown = false;
         }
         if (_rightDown)
         {
-            NativeMouse.RightUp();
+            RightUp();
             _rightDown = false;
         }
     }
+
+    void LeftUp() { if (_leftKeys is { } keys) NativeInput.Up(keys); else NativeMouse.LeftUp(); }
+    void RightUp() { if (_rightKeys is { } keys) NativeInput.Up(keys); else NativeMouse.RightUp(); }
 
     /// <summary>Stops the output thread and releases the button. Call before replacing or discarding the mouse.</summary>
     public void Dispose()

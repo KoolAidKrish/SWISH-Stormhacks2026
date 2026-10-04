@@ -44,7 +44,9 @@ public partial class CommandEditorPage : UserControl, ISwishPage
     string _savedSnapshot = "";
     bool _loading = true;
 
-    public CommandEditorPage(CustomFunction? edit = null, string? game = null, string? category = null, bool gesture = false)
+    /// <param name="template">Start a new command from this one's settings (it isn't changed or saved).</param>
+    public CommandEditorPage(CustomFunction? edit = null, string? game = null, string? category = null, bool gesture = false,
+                             CustomFunction? template = null)
     {
         InitializeComponent();
         _editing = edit;
@@ -58,21 +60,22 @@ public partial class CommandEditorPage : UserControl, ISwishPage
         CategoryBox.TextChanged += (_, _) => UpdateSummary();
         ScriptBox.TextChanged += (_, _) => UpdateSummary();
 
-        if (edit is not null)
+        if ((edit ?? template) is { } source)
         {
-            TitleText.Text = "EDIT COMMAND";
-            SubtitleText.Text = edit.Name.ToUpperInvariant();
-            NameBox.Text = edit.Name;
-            _phrases.AddRange(edit.VoicePhrases);
-            _draftGesture = edit.Gesture;
-            VoiceToggle.IsChecked = edit.VoicePhrases.Count > 0;
-            GestureToggle.IsChecked = edit.Gesture is not null;
-            SelectGame(edit.Game);
-            CategoryBox.Text = edit.Category ?? "";
-            (edit.Mode == TriggerMode.Hold ? ModeHold : ModeOnce).IsChecked = true;
-            (edit.Gesture?.Hand switch { GestureHand.Left => HandLeft, GestureHand.Right => HandRight, _ => HandEither }).IsChecked = true;
-            if (FromScript(edit.Action) is { } steps) _steps = steps;
-            else { _scriptMode = true; ScriptBox.Text = edit.Action; }
+            TitleText.Text = edit is not null ? "EDIT COMMAND" : "NEW COMMAND";
+            SubtitleText.Text = edit is not null ? edit.Name.ToUpperInvariant() : $"BASED ON {source.Name.ToUpperInvariant()}";
+            NameBox.Text = edit is not null ? edit.Name : "";   // a copy gets its own (default) name
+            _phrases.AddRange(source.VoicePhrases);
+            _draftGesture = source.Gesture;
+            VoiceToggle.IsChecked = source.VoicePhrases.Count > 0;
+            GestureToggle.IsChecked = source.Gesture is not null || gesture;
+            if (VoiceToggle.IsChecked != true && GestureToggle.IsChecked != true) VoiceToggle.IsChecked = true;
+            SelectGame(source.Game ?? game);
+            CategoryBox.Text = source.Category ?? category ?? "";
+            (source.Mode == TriggerMode.Hold ? ModeHold : ModeOnce).IsChecked = true;
+            (source.Gesture?.Hand switch { GestureHand.Left => HandLeft, GestureHand.Right => HandRight, _ => HandEither }).IsChecked = true;
+            if (FromScript(source.Action) is { } steps) _steps = steps.Count > 0 ? steps : [new Step()];
+            else { _scriptMode = true; ScriptBox.Text = source.Action; }
         }
         else
         {

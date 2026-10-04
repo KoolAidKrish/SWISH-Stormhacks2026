@@ -82,7 +82,18 @@ public partial class CameraFeedView : UserControl
 
     void OnTick()
     {
-        if (_app is null || !_app.OwnsPreview(this)) return;
+        if (_app is null) return;
+        if (_app.HandsOff)
+        {
+            // Camera closed on purpose: say so rather than "starting", and don't leave the last frame frozen.
+            Placeholder.Text = "HAND TRACKING IS OFF";
+            Placeholder.Visibility = Visibility.Visible;
+            Picture.Visibility = Visibility.Hidden;
+            Skeleton.Hands = null;
+            return;
+        }
+        Placeholder.Text = "STARTING CAMERA…";
+        if (!_app.OwnsPreview(this)) return;
         using (var frame = _app.Gestures.TakePreview())
             if (frame is not null) Show(frame);
 
@@ -97,6 +108,7 @@ public partial class CameraFeedView : UserControl
             Frame.Height = frame.Height;
         }
         Placeholder.Visibility = Visibility.Collapsed;
+        Picture.Visibility = Visibility.Visible;
 
         if (Look == FeedLook.Color)
         {

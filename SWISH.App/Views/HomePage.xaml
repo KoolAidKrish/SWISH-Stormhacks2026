@@ -18,8 +18,8 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <StackPanel>
-                    <!-- one TextBlock per letter (built in code) so each can float on its own -->
-                    <StackPanel x:Name="Wordmark" Orientation="Horizontal" Margin="0,0,0,10" AutomationProperties.Name="SWISH" />
+                    <!-- the SW/SH wordmark as stacked layers, one per letter and one for the slash (built in code), so each can float on its own -->
+                    <Grid x:Name="Wordmark" Width="560" Margin="0,10,0,22" AutomationProperties.Name="SWISH" />
                     <TextBlock x:Name="Tagline" Style="{StaticResource Mono}" FontSize="17" TextAlignment="Center" LineHeight="28"
                                Text="SERIAL · WIRELESS · INTERACTIVE ·&#10;SYSTEM · FOR · HUMANS" />
                 </StackPanel>
@@ -32,7 +32,7 @@
                     </Button>
                     <TextBlock x:Name="SkipHint" Style="{StaticResource Mono}" FontSize="13" Foreground="{StaticResource Muted}"
                                Margin="2,14,0,0" Visibility="Collapsed">
-                        <Hyperlink Click="OnSkip" Foreground="{StaticResource TealText}" FocusVisualStyle="{StaticResource FocusRing}">Already calibrated? Go to controls →</Hyperlink>
+                        <Hyperlink Click="OnSkip" Foreground="{StaticResource BlueText}" FocusVisualStyle="{StaticResource FocusRing}">Already calibrated? Go to controls →</Hyperlink>
                     </TextBlock>
                 </StackPanel>
             </Grid>

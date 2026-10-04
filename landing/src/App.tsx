@@ -1,21 +1,11 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import Hero from './Hero'
-import HeroCircuit from './HeroCircuit'
 import VoiceDemo from './VoiceDemo'
 import FingerKeys from './FingerKeys'
+import { ElevenLabs, Faq, Gallery, GetStarted, Presets, Slot, Stats, Story, Team, VideoSection } from './Sections'
+import { links, thanks } from './content'
 
 const v = (o: Record<string, string | number>) => o as CSSProperties
-
-const VERSIONS = [
-  { id: 1, theme: 'slate', name: 'Slate' },
-  { id: 2, theme: 'circuit', name: 'Circuit' },
-  { id: 3, theme: 'neon', name: 'Neon' },
-] as const
-type VersionId = (typeof VERSIONS)[number]['id']
-const readVersion = (): VersionId => {
-  const n = Number(new URLSearchParams(location.search).get('v'))
-  return VERSIONS.find(x => x.id === n)?.id ?? 1
-}
 
 // 21 MediaPipe-style landmarks for an open right hand, in a 200×220 box
 const LM: [number, number][] = [
@@ -31,12 +21,15 @@ const BONES = [
 ]
 
 const FEATURES = [
-  { tag: '01', title: 'Pinch to click', body: 'Your right palm moves the cursor. Pinch your fingers to click. Make a fist to lift the mouse and reposition, like picking one up off the desk.' },
-  { tag: '02', title: 'Fold a finger, hold a key', body: 'Your left hand is a WASD pad: thumb Space, index D, middle W, ring A, pinky S. Fold two fingers and both keys hold, so you can run and strafe at once.' },
+  { tag: '01', title: 'Pinch to click', body: 'Your right palm moves the cursor. Pinch thumb and index to left-click, thumb and middle to right-click. In Relative mode, make a fist to lift the mouse and reposition.' },
+  { tag: '02', title: 'Fold a finger, hold a key', body: 'Your left hand is a WASD pad: thumb Space, index D, middle W, ring A, pinky S. Fold two fingers and both keys hold. The Controls screen shows what each finger does in the current game.' },
   { tag: '03', title: 'Three mouse modes', body: 'Relative for aiming in games, Absolute for pointing at the screen, Joystick for steering. Switch with Ctrl+Alt+J or just say "mouse mode".' },
-  { tag: '04', title: 'Commands that read like English', body: '"left" holds A for 350 ms, "hard left" 2.2× longer, "left a little" about a third. Presets for Desktop, Rocket League and Minecraft swap live when you say "minecraft mode".' },
-  { tag: '05', title: 'Follow-the-dot calibration', body: 'A dot snakes across the screen for ~30 s and you trace it with your palm. It measures how far your hand lags, drops glitchy frames, and refuses to save a bad run.' },
+  { tag: '04', title: 'Commands that read like English', body: '"left" holds A for 350 ms, "hard left" 2.2× longer, "left a little" about a third. Five presets swap live when you say "minecraft mode" or "bloons mode".' },
+  { tag: '05', title: 'Trace-the-ball calibration', body: 'A ball snakes across the screen and you trace it with your palm. SWISH measures how far your hand lags, drops glitchy frames, and asks you to try again if the run was bad.' },
   { tag: '06', title: 'Nothing gets stuck', body: 'A left-hand fist is a rest pose that presses nothing, and every key lets go the moment your hand leaves the frame. No camera? Voice still works. No API key? Your hands still drive.' },
+  { tag: '07', title: 'Your own gestures', body: 'Record a hand pose in a guided ~7 s session, add voice phrases if you like, and choose what it does: run once, or hold keys for as long as you hold the pose.' },
+  { tag: '08', title: 'CPU or GPU', body: 'Hand models run on the CPU, or on any DirectX 12 GPU through DirectML. With no hand in view they slow to every 6th frame, so idle SWISH barely registers.' },
+  { tag: '09', title: 'Pause means off', body: 'Pause closes the camera and the microphone, so nothing is recorded or sent. One click (or the tray) brings everything back.' },
 ]
 
 const HOTKEYS = [
@@ -76,8 +69,10 @@ function GlideCursor() {
       ty = e.clientY
       el.style.opacity = '1'
       const t = e.target as HTMLElement
-      el.classList.toggle('hot', !!t.closest('a,button,input,.fk-hit'))
+      el.classList.toggle('hot', !!t.closest('a,button,.fk-hit'))
+      el.classList.toggle('typing', !!t.closest('input,textarea'))
     }
+    const leave = () => { el.style.opacity = '0' }
     const tick = () => {
       x += (tx - x) * 0.18
       y += (ty - y) * 0.18
@@ -89,18 +84,20 @@ function GlideCursor() {
     addEventListener('pointermove', move)
     addEventListener('pointerdown', down)
     addEventListener('pointerup', up)
+    document.documentElement.addEventListener('pointerleave', leave)
     raf = requestAnimationFrame(tick)
     return () => {
       removeEventListener('pointermove', move)
       removeEventListener('pointerdown', down)
       removeEventListener('pointerup', up)
+      document.documentElement.removeEventListener('pointerleave', leave)
       cancelAnimationFrame(raf)
     }
   }, [])
-  return <div className="glide" ref={ref} aria-hidden="true"><span /></div>
+  return <div className="glide" ref={ref} aria-hidden="true"><span /><i /></div>
 }
 
-function Nav({ version, onVersion }: { version: VersionId; onVersion: (id: VersionId) => void }) {
+function Nav() {
   const [scrolled, setScrolled] = useState(false)
   const bar = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -115,20 +112,15 @@ function Nav({ version, onVersion }: { version: VersionId; onVersion: (id: Versi
   }, [])
   return (
     <nav className={`nav ${scrolled ? 'solid' : ''}`}>
-      <a href="#top" className="nav-logo">SWISH<span>/</span></a>
+      <a href="#top" className="nav-logo"><img src="/wordmark.png" alt="SWISH" /></a>
       <div className="nav-links">
+        <a href="#video">Demo</a>
         <a href="#how">How it works</a>
-        <a href="#left-hand">Left hand</a>
-        <a href="#demo">Voice</a>
-        <a href="https://github.com/KoolAidKrish/SWISH-Stormhacks2026" target="_blank" rel="noreferrer">GitHub ↗</a>
+        <a href="#presets">Presets</a>
+        <a href="#team">Team</a>
+        <a href={links.github} target="_blank" rel="noreferrer">GitHub ↗</a>
       </div>
-      <div className="vswitch" role="group" aria-label="Page version">
-        {VERSIONS.map(x => (
-          <button key={x.id} className={x.id === version ? 'on' : ''} aria-pressed={x.id === version} onClick={() => onVersion(x.id)} title={x.name}>
-            V{x.id}<span> {x.name}</span>
-          </button>
-        ))}
-      </div>
+      <a className="btn btn-solid nav-cta" href="#get">Get SWISH</a>
       <div className="nav-progress" ref={bar} />
     </nav>
   )
@@ -162,11 +154,11 @@ function HandCard() {
           </svg>
         </div>
       </div>
-      <p className="channel-kicker">Channel 01 · Right hand</p>
+      <p className="channel-kicker">Channel 01: Right hand</p>
       <h3>Your right hand is the mouse.</h3>
       <p>
         A palm detector and a hand-landmark model track both hands from any webcam. Move your right palm and the
-        cursor glides after it, smoothed so it doesn't jitter. Pinch to click. No glove, no sensor.
+        cursor glides after it, smoothed so it doesn't jitter. Pinch to left-click, pinch with your middle finger to right-click.
       </p>
     </article>
   )
@@ -185,7 +177,7 @@ function LeftHandCard() {
           </div>
         ))}
       </div>
-      <p className="channel-kicker">Channel 02 · Left hand</p>
+      <p className="channel-kicker">Channel 02: Left hand</p>
       <h3>Your left hand is the keyboard.</h3>
       <p>
         Fold a finger and its key goes down; straighten it and the key comes up. Hold W with your middle finger while
@@ -205,12 +197,12 @@ function VoiceCard() {
           ))}
         </div>
         <div className="voice-lines">
-          <p><span>"hard left"</span><b>A · 770 ms</b></p>
-          <p><span>"boost"</span><b>LMB · 1500 ms</b></p>
-          <p><span>"double jump"</span><b>RMB · RMB</b></p>
+          <p><span>"hard left"</span><b>A for 770 ms</b></p>
+          <p><span>"boost"</span><b>LMB for 1500 ms</b></p>
+          <p><span>"double jump"</span><b>RMB, RMB</b></p>
         </div>
       </div>
-      <p className="channel-kicker">Channel 03 · Voice</p>
+      <p className="channel-kicker">Channel 03: Voice</p>
       <h3>Your voice does the rest.</h3>
       <p>
         Speech streams to ElevenLabs realtime speech-to-text and is matched against the active preset: taps, holds,
@@ -241,33 +233,23 @@ function Pipeline() {
     <div className="pipeline">
       <div className="pipe-app" data-reveal>
         <span className="pipe-app-name">SWISH.App</span>
-        <span className="pipe-app-sub">WPF window + tray · both engines, one process</span>
+        <span className="pipe-app-sub">WPF window and tray: both engines, one process</span>
       </div>
-      {row('Gesture · right hand', right, 0)}
-      {row('Gesture · left hand', left, 1)}
-      {row('VoiceEngine', voice, 2)}
+      {row('Right hand', right, 0)}
+      {row('Left hand', left, 1)}
+      {row('Voice', voice, 2)}
     </div>
   )
 }
 
 export default function App() {
   useReveal()
-  const [version, setVersion] = useState<VersionId>(readVersion)
-  useEffect(() => {
-    document.documentElement.dataset.theme = VERSIONS.find(x => x.id === version)!.theme
-  }, [version])
-  const switchVersion = (id: VersionId) => {
-    setVersion(id)
-    const url = new URL(location.href)
-    url.searchParams.set('v', String(id))
-    history.replaceState(null, '', url)
-  }
 
   return (
     <>
       <GlideCursor />
-      <Nav version={version} onVersion={switchVersion} />
-      {version === 2 ? <HeroCircuit key="circuit" /> : <Hero key={version} />}
+      <Nav />
+      <Hero />
 
       <div className="marquee" aria-hidden="true">
         <div className="marquee-track">
@@ -280,7 +262,10 @@ export default function App() {
       </div>
 
       <main>
-        <section id="how" className="section">
+        <VideoSection />
+        <div className="section stats-wrap"><Stats /></div>
+
+        <section id="how" className="section section-alt">
           <div className="section-head" data-reveal>
             <p className="eyebrow">// how it works</p>
             <h2>Two hands. One voice.<br /><span className="hl">Zero controllers.</span></h2>
@@ -296,7 +281,7 @@ export default function App() {
           </div>
         </section>
 
-        <section id="left-hand" className="section section-alt">
+        <section id="left-hand" className="section">
           <div className="section-head" data-reveal>
             <p className="eyebrow">// left hand</p>
             <h2>Fold a finger.<br /><span className="hl">Hold a key.</span></h2>
@@ -306,18 +291,6 @@ export default function App() {
             </p>
           </div>
           <FingerKeys />
-        </section>
-
-        <section className="section">
-          <div className="section-head" data-reveal>
-            <p className="eyebrow">// under the hood</p>
-            <h2>Two engines, <span className="hl">one app.</span></h2>
-            <p className="lede">
-              One camera loop splits the hands, right to the mouse and left to the keyboard. Voice runs alongside it in
-              the same tray app, and each engine still runs on its own as a console tool.
-            </p>
-          </div>
-          <Pipeline />
         </section>
 
         <section id="demo" className="section section-alt">
@@ -332,7 +305,22 @@ export default function App() {
           <VoiceDemo />
         </section>
 
-        <section id="features" className="section">
+        <Presets />
+        <ElevenLabs />
+
+        <section className="section">
+          <div className="section-head" data-reveal>
+            <p className="eyebrow">// under the hood</p>
+            <h2>Two engines, <span className="hl">one app.</span></h2>
+            <p className="lede">
+              One camera loop splits the hands, right to the mouse and left to the keyboard. Voice runs alongside it in
+              the same tray app, and each engine still runs on its own as a console tool.
+            </p>
+          </div>
+          <Pipeline />
+        </section>
+
+        <section id="features" className="section section-alt">
           <div className="section-head" data-reveal>
             <p className="eyebrow">// features</p>
             <h2>Built to <span className="hl">actually play.</span></h2>
@@ -360,27 +348,51 @@ export default function App() {
           </div>
         </section>
 
+        <Gallery />
+        <Story />
+        <GetStarted />
+        <Team />
+        <Faq />
+
         <section className="cta">
           <div className="cta-stripes" aria-hidden="true" />
           <div className="cta-panel" data-reveal>
-            <p className="eyebrow">// stormhacks 2026 · simon fraser university</p>
+            <p className="eyebrow">// stormhacks 2026, simon fraser university</p>
             <h2>Put the controller down.</h2>
             <p className="lede">
               SWISH was built at StormHacks 2026. The code is on GitHub: grab it, add a preset for your game, and play
               with nothing in your hands.
             </p>
             <div className="hero-ctas">
-              <a className="btn btn-solid" href="https://github.com/KoolAidKrish/SWISH-Stormhacks2026" target="_blank" rel="noreferrer">Get SWISH on GitHub ↗</a>
-              <a className="btn btn-ghost" href="#left-hand">Try the demos again</a>
+              {links.devpost ? (
+                <a className="btn btn-solid" href={links.devpost} target="_blank" rel="noreferrer">See us on Devpost ↗</a>
+              ) : (
+                <Slot field="links.devpost" className="slot-line" />
+              )}
+              <a className="btn btn-ghost" href={links.github} target="_blank" rel="noreferrer">GitHub ↗</a>
             </div>
           </div>
         </section>
       </main>
 
       <footer className="footer">
-        <span className="nav-logo">SWISH<span>/</span></span>
-        <span>Serial · Wireless · Interactive · System · for · Humans</span>
-        <span>Speech by ElevenLabs</span>
+        <div className="footer-top">
+          <span className="nav-logo"><img src="/wordmark.png" alt="SWISH" /></span>
+          <nav className="footer-links" aria-label="Footer">
+            <a href="#video">Demo</a>
+            <a href="#presets">Presets</a>
+            <a href="#get">Get it</a>
+            <a href="#team">Team</a>
+            <a href="#faq">FAQ</a>
+            <a href={links.github} target="_blank" rel="noreferrer">GitHub</a>
+            {links.devpost && <a href={links.devpost} target="_blank" rel="noreferrer">Devpost</a>}
+          </nav>
+        </div>
+        <div className="footer-bottom">
+          <span>Serial Wireless Interactive System for Humans</span>
+          {thanks ? <span>{thanks}</span> : <Slot field="thanks" className="slot-inline-box" />}
+          <span>Made at StormHacks 2026. Speech by ElevenLabs.</span>
+        </div>
       </footer>
     </>
   )
