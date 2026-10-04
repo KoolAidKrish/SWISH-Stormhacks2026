@@ -15,7 +15,10 @@ public enum MouseMode
 }
 
 /// <summary>
-/// Drives the mouse from hand landmarks, with pinch-to-click (hold pinch to drag).
+/// Drives the mouse from hand landmarks:
+///   thumb + index pinch  = left button  (hold to drag)
+///   thumb + middle pinch = right button (hold to keep it pressed)
+///   thumb on both fingertips = both buttons (e.g. aim + shoot), when simultaneousButtons is on
 /// In Relative mode, make a fist to "lift the mouse" so you can reposition your hand.
 ///
 /// Smoothness: the camera only updates ~30 times a second. Instead of jumping the cursor
@@ -32,12 +35,14 @@ public sealed class HandMouse : IDisposable
     readonly OneEuroFilter _fx, _fy;
     readonly double _deadzonePx;
     readonly double _pinchOn, _pinchOff, _clickFreezeSeconds;
+    readonly bool _simultaneousButtons;
     readonly double _sensitivity, _acceleration;
     readonly double _stickDeadzone, _stickMaxSpeed;
     readonly double _glideSeconds;
 
     // Main-thread state
-    bool _buttonDown;
+    bool _buttonDown;       // left
+    bool _rightDown;
     double _freezeUntil;
     bool _enabled = true;
     bool _hasCursor;
@@ -62,6 +67,7 @@ public sealed class HandMouse : IDisposable
 
     public MouseMode Mode { get; private set; } = MouseMode.Relative;
     public bool IsPinching => _buttonDown;
+    public bool IsRightPinching => _rightDown;
     public bool IsClutched { get; private set; }
 
     public bool Enabled
@@ -77,6 +83,8 @@ public sealed class HandMouse : IDisposable
     /// <param name="acceleration">Relative mode: extra gain for fast moves. 0 = none.</param>
     /// <param name="glideSeconds">How long the cursor takes to glide to each new camera reading.
     /// Higher = silkier but slightly laggier (try 0.02 to 0.06).</param>
+    /// <param name="simultaneousButtons">True = left and right can be held together (aim + shoot in FPS games).
+    /// False = one button at a time, closer pinch wins (fewer accidental double-clicks on the desktop).</param>
     /// <param name="stickDeadzone">Joystick mode: distance from center (screen px) before turning starts.</param>
     /// <param name="stickMaxSpeed">Joystick mode: turn speed (counts/s) at the edge.</param>
     public HandMouse(CalibrationData calibration,
@@ -84,6 +92,7 @@ public sealed class HandMouse : IDisposable
                      double sensitivity = 1.5, double acceleration = 0.0005,
                      double glideSeconds = 0.03,
                      double pinchOn = 0.25, double pinchOff = 0.40, double clickFreezeSeconds = 0.15,
+                     bool simultaneousButtons = true,
                      double stickDeadzone = 120, double stickMaxSpeed = 2500)
     {
         _cal = calibration;
@@ -95,6 +104,7 @@ public sealed class HandMouse : IDisposable
         _glideSeconds = Math.Max(0.001, glideSeconds);
         _pinchOn = pinchOn;
         _pinchOff = pinchOff;
+        _simultaneousButtons = simultaneousButtons;
         _clickFreezeSeconds = clickFreezeSeconds;
         _stickDeadzone = stickDeadzone;
         _stickMaxSpeed = stickMaxSpeed;
@@ -169,13 +179,52 @@ public sealed class HandMouse : IDisposable
         IsClutched = Mode == MouseMode.Relative && IsFist(landmarks, handSize);
 
         // Pinch = left button. Never start a click from a fist.
-        double pinch = handSize > 1e-3 ? Dist(landmarks[4], landmarks[8]) / handSize : 1.0;
-        bool wantDown = _buttonDown ? pinch < _pinchOff : (pinch < _pinchOn && !IsClutched);
-        if (wantDown != _buttonDown)
+        double leftPinch = handSize > 1e-3 ? Dist(landmarks[4], landmarks[8]) / handSize : 1.0;   // thumb-index
+        double rightPinch = handSize > 1e-3 ? Dist(landmarks[4], landmarks[12]) / handSize : 1.0; // thumb-middle
+
+        // Releases (hysteresis: let go only once the fingers are clearly apart)
+        if (_buttonDown && leftPinch >= _pinchOff)
         {
+            NativeMouse.LeftUp();
+            _buttonDown = false;
             _freezeUntil = now + _clickFreezeSeconds;
-            if (wantDown) NativeMouse.LeftDown(); else NativeMouse.LeftUp();
-            _buttonDown = wantDown;
+        }
+        if (_rightDown && rightPinch >= _pinchOff)
+        {
+            NativeMouse.RightUp();
+            _rightDown = false;
+            _freezeUntil = now + _clickFreezeSeconds;
+        }
+
+        // Presses (never from a fist)
+        if (!IsClutched)
+        {
+            bool left = !_buttonDown && leftPinch < _pinchOn;
+            bool right = !_rightDown && rightPinch < _pinchOn;
+
+            if (!_simultaneousButtons)
+            {
+                // One button at a time: nothing new while either is held, and the closer pinch wins
+                if (_buttonDown || _rightDown) left = right = false;
+                else if (left && right)
+                {
+                    left = leftPinch <= rightPinch;
+                    right = !left;
+                }
+            }
+
+            if (left)
+            {
+                NativeMouse.LeftDown();
+                _buttonDown = true;
+                _freezeUntil = now + _clickFreezeSeconds;
+            }
+            if (right)
+            {
+                NativeMouse.RightDown();
+                _rightDown = true;
+                _freezeUntil = now + _clickFreezeSeconds;
+            }
         }
 
         bool frozen = now < _freezeUntil;
@@ -321,9 +370,16 @@ public sealed class HandMouse : IDisposable
 
     public void Release()
     {
-        if (!_buttonDown) return;
-        NativeMouse.LeftUp();
-        _buttonDown = false;
+        if (_buttonDown)
+        {
+            NativeMouse.LeftUp();
+            _buttonDown = false;
+        }
+        if (_rightDown)
+        {
+            NativeMouse.RightUp();
+            _rightDown = false;
+        }
     }
 
     /// <summary>Stops the output thread and releases the button. Call before replacing or discarding the mouse.</summary>

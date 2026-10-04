@@ -41,6 +41,12 @@ C:\Users\arron\SWISH-Stormhacks2026\gesture_control\obj\Debug\net8.0\refint\Hand
 C:\Users\arron\SWISH-Stormhacks2026\gesture_control\obj\Debug\net8.0\HandGestureRecognition.pdb
 C:\Users\arron\SWISH-Stormhacks2026\gesture_control\obj\Debug\net8.0\HandGestureRecognition.genruntimeconfig.cache
 C:\Users\arron\SWISH-Stormhacks2026\gesture_control\obj\Debug\net8.0\ref\HandGestureRecognition.dll
+C:\Users\arron\SWISH-Stormhacks2026\HandGestureRecognition\bin\Debug\net8.0\Model\hand_landmark\hand_landmark_sparse_Nx3x224x224.onnx
+C:\Users\arron\SWISH-Stormhacks2026\HandGestureRecognition\bin\Debug\net8.0\Model\keypoint_classifier\keypoint_classifier.onnx
+C:\Users\arron\SWISH-Stormhacks2026\HandGestureRecognition\bin\Debug\net8.0\Model\keypoint_classifier\keypoint_classifier_label.csv
+C:\Users\arron\SWISH-Stormhacks2026\HandGestureRecognition\bin\Debug\net8.0\Model\palm_detection\palm_detection_full_inf_post_192x192.onnx
+C:\Users\arron\SWISH-Stormhacks2026\HandGestureRecognition\bin\Debug\net8.0\Model\point_history_classifier\point_history_classifier_label.csv
+C:\Users\arron\SWISH-Stormhacks2026\HandGestureRecognition\bin\Debug\net8.0\Model\point_history_classifier\point_history_classifier_lstm.onnx
 C:\Users\arron\SWISH-Stormhacks2026\HandGestureRecognition\bin\Debug\net8.0\HandGestureRecognition.exe
 C:\Users\arron\SWISH-Stormhacks2026\HandGestureRecognition\bin\Debug\net8.0\HandGestureRecognition.deps.json
 C:\Users\arron\SWISH-Stormhacks2026\HandGestureRecognition\bin\Debug\net8.0\HandGestureRecognition.runtimeconfig.json

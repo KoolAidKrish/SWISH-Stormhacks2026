@@ -9,6 +9,8 @@ public static class NativeMouse
     const uint MOUSEEVENTF_MOVE = 0x0001;
     const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
     const uint MOUSEEVENTF_LEFTUP = 0x0004;
+    const uint MOUSEEVENTF_RIGHTDOWN = 0x0008;
+    const uint MOUSEEVENTF_RIGHTUP = 0x0010;
 
     [StructLayout(LayoutKind.Sequential)]
     struct MOUSEINPUT
@@ -67,6 +69,8 @@ public static class NativeMouse
     }
     public static void LeftDown() => Send(MOUSEEVENTF_LEFTDOWN);
     public static void LeftUp() => Send(MOUSEEVENTF_LEFTUP);
+    public static void RightDown() => Send(MOUSEEVENTF_RIGHTDOWN);
+    public static void RightUp() => Send(MOUSEEVENTF_RIGHTUP);
 
     static void Send(uint flags)
     {

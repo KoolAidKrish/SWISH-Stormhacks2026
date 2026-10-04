@@ -195,6 +195,9 @@ public sealed class GestureEngine : IDisposable
         _mouse = _calibrator is null ? CreateMouse(calib!) : null;
         var mouseClock = Stopwatch.StartNew();
 
+        // Keyboard control (left hand) ##########################################
+        var keyboard = new HandKeyboard();
+
         // Label loading #########################################################
         // (keypoint labels are loaded for parity with the original; it never draws them)
         var keypointClassifierLabels = ReadLabels(ModelPath("keypoint_classifier/keypoint_classifier_label.csv"));
@@ -249,6 +252,7 @@ public sealed class GestureEngine : IDisposable
                 bool toggleWindow = HotkeyPressed('V') || key == 'v';  // Ctrl+Alt+V or v
                 bool toggleMouse = HotkeyPressed('M') || key == 'm';   // Ctrl+Alt+M or m
                 bool cycleMouseMode = HotkeyPressed('J');              // Ctrl+Alt+J
+                bool toggleKeyboard = HotkeyPressed('K');              // Ctrl+Alt+K
 
                 if (quit)
                 {
@@ -281,6 +285,11 @@ public sealed class GestureEngine : IDisposable
                     _mouse.CycleMode();   // Relative -> Absolute -> Joystick
                     Log?.Invoke($"Mouse mode: {_mouse.Mode}");
                 }
+                if (toggleKeyboard)
+                {
+                    keyboard.Enabled = !keyboard.Enabled;
+                    Log?.Invoke(keyboard.Enabled ? "Keyboard control ON" : "Keyboard control OFF");
+                }
                 if (key == 'c' && _calibrator is null)
                 {
                     StartCalibration(); // recalibrate
@@ -298,7 +307,8 @@ public sealed class GestureEngine : IDisposable
                     Cv2.Flip(image, image, FlipMode.Y); // mirror display
                 }
                 using var debugImage = image.Clone();
-                Point2f[]? mouseLandmarks = null;
+                Point2f[]? mouseLandmarks = null;     // right hand
+                Point2f[]? keyboardLandmarks = null;  // left hand
 
                 // Detection #####################################################
 
@@ -424,9 +434,6 @@ public sealed class GestureEngine : IDisposable
 
                     if (handLandmarks.Count > 0)
                     {
-                        // First detected hand drives the mouse
-                        mouseLandmarks = handLandmarks[0].Select(p => new Point2f(p.X, p.Y)).ToArray();
-
                         var preProcessedLandmarks = new List<double[]>();
 
                         int zipCount = Min(palmTrackidBoxX1y1s.Count, handLandmarks.Count, rotatedImageSizeLeftrights.Count, notRotateRects.Count);
@@ -452,6 +459,16 @@ public sealed class GestureEngine : IDisposable
                                 ? sizeLr.LeftHand0OrRightHand1
                                 : 1 - sizeLr.LeftHand0OrRightHand1;
                             string handedness = leftHand0OrRightHand1 == 0 ? "Left " : "Right";
+
+                            // Right hand -> mouse, left hand -> keyboard (first of each wins)
+                            if (leftHand0OrRightHand1 >= 0.5f)
+                            {
+                                mouseLandmarks ??= landmark.Select(p => new Point2f(p.X, p.Y)).ToArray();
+                            }
+                            else
+                            {
+                                keyboardLandmarks ??= landmark.Select(p => new Point2f(p.X, p.Y)).ToArray();
+                            }
                             int textX = Math.Min(Math.Max(notRotateRect.X1, 10), capWidth - 120);
                             int textY = Math.Min(Math.Max(notRotateRect.Y1 - 70, 20), capHeight - 70);
                             PutOutlinedText(debugImage, $"trackid:{trackid} {handedness}", new Point(textX, textY), 0.8);
@@ -593,10 +610,25 @@ public sealed class GestureEngine : IDisposable
                 {
                     _mouse.Update(mouseLandmarks, now);
                     string status = !_mouse.Enabled ? "MOUSE:OFF"
-                        : _mouse.IsPinching ? "MOUSE:CLICK"
+                        : _mouse.IsPinching && _mouse.IsRightPinching ? "MOUSE:LEFT+RIGHT"
+                        : _mouse.IsPinching ? "MOUSE:LEFT CLICK"
+                        : _mouse.IsRightPinching ? "MOUSE:RIGHT CLICK"
                         : _mouse.IsClutched ? "MOUSE:LIFTED"
                         : $"MOUSE:{_mouse.Mode.ToString().ToUpperInvariant()}";
                     PutOutlinedText(debugImage, status, new Point(10, 160), 0.6);
+                }
+
+                // Keyboard control ##############################################
+                keyboard.Update(_calibrator is null ? keyboardLandmarks : null); // paused while calibrating
+                string keys = !keyboard.Enabled ? "KEYS:OFF"
+                    : keyboard.IsResting ? "KEYS:REST (fist)"
+                    : keyboard.HeldKeys.Count == 0 ? "KEYS:-"
+                    : "KEYS:" + string.Join("+", keyboard.HeldKeys.Select(HandKeyboard.KeyName));
+                PutOutlinedText(debugImage, keys, new Point(10, 185), 0.6);
+                if (keyboardLandmarks is not null)
+                {
+                    // Live finger readings for tuning thresholds (lower = more folded)
+                    PutOutlinedText(debugImage, keyboard.DebugValues, new Point(10, 210), 0.5);
                 }
 
                 // Display ###################################################
@@ -618,6 +650,7 @@ public sealed class GestureEngine : IDisposable
         }
         finally
         {
+            keyboard.Dispose();       // release any held keys
             _mouse?.Dispose();        // let go of the mouse button and stop the output thread
             _mouse = null;
             _calibrator?.Dispose();   // close the calibration window before DestroyAllWindows
@@ -645,7 +678,7 @@ public sealed class GestureEngine : IDisposable
     /// <summary>All mouse tuning lives here; used at startup and after every calibration.</summary>
     private static HandMouse CreateMouse(CalibrationData calib) =>
         new HandMouse(calib,
-            sensitivity: 1,      // cursor speed (try 1.0 - 3.0)
+            sensitivity: 1.5,      // cursor speed (try 1.0 - 3.0)
             acceleration: 0.0005,  // extra speed for fast flicks (0 = off)
             minCutoff: 0.25,       // smoothing at rest (lower = steadier, laggier)
             deadzonePx: 8,         // wobble ignored while holding still
