@@ -30,7 +30,7 @@ public static class KeySender
     private sealed record Lift : Step;                                 // lift               temporarily unlatch everything...
     private sealed record Resume : Step;                               // resume             ...and put it back, unless something else changed it meanwhile
     private sealed record Wait(int Ms) : Step;                         // wait <ms>
-    private sealed record Type(string Text) : Step;
+    private sealed record Type(string Text) : Step;                    // type <text>
 
     /// <summary>Parses step strings like "latch w", "tap rmb 50", "wait 70". Throws on mistakes.</summary>
     public static List<Step> ParseSteps(IEnumerable<string> lines) => lines.Select(ParseStep).ToList();
@@ -54,7 +54,8 @@ public static class KeySender
             "lift" => new Lift(),
             "resume" => new Resume(),
             "wait" => new Wait(Ms(1)),
-            _ => throw new FormatException($"Unknown step \"{line}\" (use tap, hold, down, up, latch, unlatch, release, lift, resume, wait)"),
+            "type" => new Type(line.Trim()[4..].TrimStart()),          // type <text>: the rest of the line, typed as-is
+            _ => throw new FormatException($"Unknown step \"{line}\" (use tap, hold, down, up, latch, unlatch, release, lift, resume, wait, type)"),
         };
     }
 
@@ -72,7 +73,6 @@ public static class KeySender
     }
 
     public static void TypeText(string text) => Run([new Type(text)]);
-    public static void PressChord(string chord, int? holdMs = null) => Run(TapSteps([chord], holdMs));
 
     private static void Execute(IReadOnlyList<Step> steps)
     {

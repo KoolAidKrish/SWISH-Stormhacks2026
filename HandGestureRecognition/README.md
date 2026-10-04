@@ -19,6 +19,11 @@ dotnet run --project HandGestureRecognition -c Release -- --image hand.png
 
 Options are identical to the Python version: `-d/--device`, `-im/--image`, `-wi/--width`,
 `-he/--height`, `-mdc/--min_detection_confidence`, `-dif/--disable_image_flip`.
+Added here: `-sw/--show_window`, `-cal/--calibrate`, `-calp/--calibrate_pursuit`, and `-rec/--record`
+(saves the annotated feed to `output.mp4`; off by default, it writes ~9 MB a minute).
+
+With no hand in view for 1.5 s, the models run ~5 times a second instead of every frame
+(`GestureOptions.IdleAfterSeconds` / `IdleFrameInterval`), which cuts idle CPU by about two thirds.
 
 Keys are also identical: `ESC` quit, `n` normal, `k` log keypoints, `h` log point history,
 `0`–`9` class ID, `a` toggle auto-repeat of the last number.

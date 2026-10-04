@@ -51,6 +51,26 @@ Each engine is a class the console programs also use (`HandGestureRecognition/Pr
 `VoiceKeys/Program.cs` are thin wrappers), so they can still be run and debugged separately
 (`.\run.ps1 -Console`). If one engine can't start (no camera, no API key), the other keeps working.
 
+## Custom gestures & commands
+
+**Custom gestures…** (main window or tray) lets you make your own functions, each triggered by a hand
+gesture, by voice, or both:
+
+1. **Name it** and pick the hand (right, left, or either).
+2. **Record the gesture:** after a countdown, hold the pose for ~7 s while the guide asks you to tilt it
+   left/right, toward/away, make circles and move it around, so it's recognised from different angles.
+   You're warned if it looks too much like a gesture you already have.
+3. **Add voice phrases** (optional, comma-separated). They work in every preset.
+4. **Write the action**, one per line: a key or chord taps it (`ctrl+c`, `alt+tab`, `lmb`), or use steps
+   (`hold w 500`, `wait 100`, `latch shift`, `type Hello`). Choose whether the gesture runs it **once**
+   or **holds the keys while the gesture is held**.
+
+Recognition compares your hand with the recorded samples (no retraining needed): positions are
+measured relative to the wrist and palm size, so moving the hand or changing distance doesn't matter;
+finger extension is weighted so similar poses (fist vs. thumbs-up) stay apart. A gesture fires after
+~4 steady frames, and while it's active that hand's mouse and finger-keyboard pause.
+Saved to `%LOCALAPPDATA%\SWISH\custom-functions.json`.
+
 ## Using them together
 
 Voice can control the hand tracking, in every preset (it presses the same hotkeys you would):

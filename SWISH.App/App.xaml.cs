@@ -31,6 +31,13 @@ public partial class App : Application
     /// <summary>Why voice isn't running (missing API key, bad preset file...), for the UI.</summary>
     public string? VoiceProblem { get; private set; }
     public bool IsExiting { get; private set; }
+    /// <summary>The user's custom gesture/voice functions.</summary>
+    public CustomFunctionManager CustomFunctions { get; private set; } = null!;
+    CustomFunctionsWindow? _customWindow;
+
+    // There's one stream of preview frames. Whichever window claimed it most recently gets them
+    // (the recorder over the custom-functions window over the main window).
+    readonly List<object> _previewClaims = new();
 
     static string DataDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SWISH");
 
@@ -64,7 +71,6 @@ public partial class App : Application
         {
             ModelDir = Path.Combine(AppContext.BaseDirectory, "Model"),
             CalibrationPath = Path.Combine(DataDir, "calibration.json"),
-            RecordPath = null,          // the console app records output.mp4; no need here
             UseOpenCvWindow = false,    // the dashboard shows the preview instead
         });
         Gestures.ToggleWindowRequested += () => Dispatcher.BeginInvoke(ToggleWindow);
@@ -74,6 +80,10 @@ public partial class App : Application
         // ---- Voice ----
         Voice = TryCreateVoice();
 
+        // ---- Custom functions (gestures + voice phrases) ----
+        CustomFunctions = new CustomFunctionManager(DataDir, Gestures, Voice);
+        CustomFunctions.Load();
+
         // ---- UI ----
         _tray = new TrayIcon(
             showWindow: ShowWindow,
@@ -82,6 +92,7 @@ public partial class App : Application
             choosePreset: id => { if (Voice?.Config.FindPreset(id) is { } p) Voice.SwitchPreset(p); },
             recalibrate: () => Gestures.Recalibrate(HandGestureRecognition.Mouse.CalibrationKind.Points),
             recalibratePursuit: () => Gestures.Recalibrate(HandGestureRecognition.Mouse.CalibrationKind.Pursuit),
+            customFunctions: ShowCustomFunctions,
             openPresetsFolder: () => Process.Start("explorer.exe", Path.Combine(AppContext.BaseDirectory, "presets")),
             exit: Shutdown);
         if (Voice is not null) _tray.SetPresets(Voice.SwitchablePresets.Select(p => (p.Id, p.Name)));
@@ -137,6 +148,36 @@ public partial class App : Application
             return null;
         }
     }
+
+    public void ShowCustomFunctions()
+    {
+        if (_customWindow is null)
+        {
+            _customWindow = new CustomFunctionsWindow(this, CustomFunctions);
+            if (_window?.IsVisible == true) _customWindow.Owner = _window;
+            _customWindow.Closed += (_, _) => _customWindow = null;
+            _customWindow.Show();
+        }
+        _customWindow.Activate();
+    }
+
+    public void ClaimPreview(object owner)
+    {
+        _previewClaims.Remove(owner);
+        _previewClaims.Add(owner);
+        _window?.UpdatePreviewFlag();
+    }
+
+    public void ReleasePreview(object owner)
+    {
+        _previewClaims.Remove(owner);
+        _window?.UpdatePreviewFlag();
+    }
+
+    /// <summary>Should this window take the preview frames right now?</summary>
+    public bool OwnsPreview(object owner) => _previewClaims.Count > 0 ? _previewClaims[^1] == owner : owner == _window;
+
+    public bool PreviewClaimed => _previewClaims.Count > 0;
 
     void ShowWindow()
     {
