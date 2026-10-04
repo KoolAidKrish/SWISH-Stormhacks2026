@@ -1,0 +1,273 @@
+<UserControl x:Class="Swish.App.Views.CommandEditorPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Swish.App.Controls"
+             Background="{StaticResource Bg}">
+    <UserControl.Resources>
+        <!-- Step grip: six dots; pink and a little bigger under the pointer, with focus, or while dragging -->
+        <Style x:Key="GripThumb" TargetType="Thumb">
+            <Setter Property="Width" Value="30" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="Focusable" Value="True" />
+            <Setter Property="Cursor" Value="SizeNS" />
+            <Setter Property="Foreground" Value="{StaticResource Muted}" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
+            <Setter Property="ToolTip" Value="Drag to reorder (or focus and press Up / Down)" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Grid Background="Transparent">
+                            <UniformGrid x:Name="Dots" Rows="3" Columns="2" Width="12" Height="19" RenderTransformOrigin="0.5,0.5">
+                                <UniformGrid.RenderTransform><ScaleTransform x:Name="Swell" /></UniformGrid.RenderTransform>
+                                <Ellipse Width="4.5" Height="4.5" Fill="{TemplateBinding Foreground}" />
+                                <Ellipse Width="4.5" Height="4.5" Fill="{TemplateBinding Foreground}" />
+                                <Ellipse Width="4.5" Height="4.5" Fill="{TemplateBinding Foreground}" />
+                                <Ellipse Width="4.5" Height="4.5" Fill="{TemplateBinding Foreground}" />
+                                <Ellipse Width="4.5" Height="4.5" Fill="{TemplateBinding Foreground}" />
+                                <Ellipse Width="4.5" Height="4.5" Fill="{TemplateBinding Foreground}" />
+                            </UniformGrid>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="False" />
+                                    <Condition Property="IsDragging" Value="False" />
+                                    <Condition Property="IsKeyboardFocused" Value="False" />
+                                </MultiTrigger.Conditions>
+                                <MultiTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Swell" Storyboard.TargetProperty="ScaleX" To="1.25" Duration="0:0:0.12" />
+                                            <DoubleAnimation Storyboard.TargetName="Swell" Storyboard.TargetProperty="ScaleY" To="1.25" Duration="0:0:0.12" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </MultiTrigger.ExitActions>
+                                <MultiTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Swell" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.15" />
+                                            <DoubleAnimation Storyboard.TargetName="Swell" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.15" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </MultiTrigger.EnterActions>
+                            </MultiTrigger>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter Property="Foreground" Value="{StaticResource Pink}" /></Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True"><Setter Property="Foreground" Value="{StaticResource Pink}" /></Trigger>
+                            <Trigger Property="IsDragging" Value="True"><Setter Property="Foreground" Value="{StaticResource Pink}" /></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="Help" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="Foreground" Value="{StaticResource Muted}" />
+        </Style>
+        <Style x:Key="FieldLabel" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{StaticResource Gray}" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+        <Style x:Key="StepNumber" TargetType="TextBlock" BasedOn="{StaticResource Display}">
+            <Setter Property="FontSize" Value="26" />
+            <Setter Property="Foreground" Value="{StaticResource Pink}" />
+            <Setter Property="Margin" Value="0,0,12,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </UserControl.Resources>
+
+  <Grid>
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+    <c:MenuSidebar x:Name="Sidebar" />
+    <DockPanel Grid.Column="1" Margin="34,26,30,0">
+        <!-- ===== Header, one line: back, title, game ===== -->
+        <DockPanel DockPanel.Dock="Top" Height="64" Margin="0,0,0,18">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="FOR" Style="{StaticResource FieldLabel}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                <ComboBox x:Name="GameCombo" Width="220" SelectionChanged="OnGameChanged" AutomationProperties.Name="Which game it works in" />
+            </StackPanel>
+            <Button x:Name="BackButton" DockPanel.Dock="Left" Width="40" Height="40" Padding="0" Margin="0,0,16,0" VerticalAlignment="Center"
+                    Click="OnBack" ToolTip="Back to controls (Esc)" AutomationProperties.Name="Back to controls">
+                <TextBlock Text="←" FontSize="18" />
+            </Button>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock x:Name="TitleText" Text="NEW COMMAND" Style="{StaticResource Heading}" FontSize="30" />
+                <TextBlock x:Name="SubtitleText" Text="CUSTOM VOICE OR GESTURE COMMAND" Style="{StaticResource Mono}" FontSize="11.5" FontWeight="Bold"
+                           Foreground="{StaticResource Pink}" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- ===== Footer: save / test / delete ===== -->
+        <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="0,14,0,18">
+            <DockPanel>
+                <Button x:Name="DeleteButton" DockPanel.Dock="Right" Click="OnDelete" BorderBrush="{StaticResource Danger}"
+                        Foreground="{StaticResource Danger}" AutomationProperties.Name="Delete this command">
+                    <TextBlock Text="DELETE" />
+                </Button>
+                <Button x:Name="SaveButton" Style="{StaticResource PrimaryButton}" Click="OnSave" Margin="0,0,12,0" AutomationProperties.Name="Save">
+                    <TextBlock Text="✓  SAVE" />
+                </Button>
+                <Button Click="OnTest" Margin="0,0,16,0" AutomationProperties.Name="Test the action in 3 seconds">
+                    <TextBlock Text="▶  TEST ACTION" />
+                </Button>
+                <TextBlock x:Name="MessageText" Style="{StaticResource Mono}" VerticalAlignment="Center" Foreground="{StaticResource Muted}" />
+            </DockPanel>
+        </Border>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="28" />
+                <ColumnDefinition Width="320" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ===== The three steps ===== -->
+            <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Auto" Focusable="False">
+                <StackPanel Margin="0,0,14,24">
+
+                    <!-- 1. Trigger -->
+                    <ContentControl Style="{StaticResource SectionBar}" Margin="0,0,0,14">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="1  " Foreground="{StaticResource Pink}" /><TextBlock Text="HOW DO YOU TRIGGER IT?" /></StackPanel>
+                    </ContentControl>
+                    <UniformGrid Columns="2" Margin="0,0,0,14">
+                        <ToggleButton x:Name="VoiceToggle" Style="{StaticResource TriggerToggle}" Margin="0,0,8,0" Checked="OnTriggerToggled" Unchecked="OnTriggerToggled"
+                                      AutomationProperties.Name="Trigger by saying a phrase">
+                            <StackPanel>
+                                <TextBlock Text="🔊  SAY A PHRASE" Style="{StaticResource Display}" FontSize="20" />
+                                <TextBlock Text="Voice, heard by ElevenLabs" Style="{StaticResource Help}" Foreground="{StaticResource Gray}" />
+                            </StackPanel>
+                        </ToggleButton>
+                        <ToggleButton x:Name="GestureToggle" Style="{StaticResource TriggerToggle}" Margin="8,0,0,0" Checked="OnTriggerToggled" Unchecked="OnTriggerToggled"
+                                      AutomationProperties.Name="Trigger by making a hand gesture">
+                            <StackPanel>
+                                <TextBlock Text="✋  MAKE A GESTURE" Style="{StaticResource Display}" FontSize="20" />
+                                <TextBlock Text="A hand pose you record" Style="{StaticResource Help}" Foreground="{StaticResource Gray}" />
+                            </StackPanel>
+                        </ToggleButton>
+                    </UniformGrid>
+
+                    <!-- Voice -->
+                    <Border x:Name="VoicePanel" Background="{StaticResource Panel}" Padding="16,14" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Text="PHRASES" Style="{StaticResource FieldLabel}" />
+                            <WrapPanel x:Name="PhraseChips" />
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Click="OnAddPhrase" Margin="8,0,0,0" AutomationProperties.Name="Add phrase">
+                                    <TextBlock Text="+ ADD" />
+                                </Button>
+                                <Grid>
+                                    <TextBox x:Name="PhraseBox" KeyDown="OnPhraseKey" AutomationProperties.Name="New phrase" />
+                                    <TextBlock x:Name="PhraseHint" Text="Type a phrase and press Enter, e.g. &quot;reload&quot;" Style="{StaticResource Help}"
+                                               Margin="10,0" VerticalAlignment="Center" IsHitTestVisible="False" />
+                                </Grid>
+                            </DockPanel>
+                            <TextBlock Style="{StaticResource Help}" Margin="0,8,0,0"
+                                       Text="Short, distinct words work best. Add a few ways you might say it." />
+                            <Border BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Margin="0,12,0,0" Padding="0,10,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="TRY IT: SAY ONE OF YOUR PHRASES" Style="{StaticResource FieldLabel}" />
+                                    <TextBlock x:Name="HeardText" Style="{StaticResource Mono}" Text="Listening…" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Gesture -->
+                    <Border x:Name="GesturePanel" Background="{StaticResource Panel}" Padding="16,14" Margin="0,0,0,12">
+                        <StackPanel>
+                            <WrapPanel>
+                                <StackPanel Margin="0,0,30,10">
+                                    <TextBlock Text="WHICH HAND" Style="{StaticResource FieldLabel}" />
+                                    <StackPanel Orientation="Horizontal" Margin="-8,0,0,0">
+                                        <RadioButton x:Name="HandLeft" GroupName="Hand" Style="{StaticResource SegmentToggle}" Content="LEFT" Checked="OnHandChanged" />
+                                        <RadioButton x:Name="HandRight" GroupName="Hand" Style="{StaticResource SegmentToggle}" Content="RIGHT" Checked="OnHandChanged" />
+                                        <RadioButton x:Name="HandEither" GroupName="Hand" Style="{StaticResource SegmentToggle}" Content="EITHER" Checked="OnHandChanged" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel Margin="0,0,0,10">
+                                    <TextBlock Text="WHEN YOU MAKE IT" Style="{StaticResource FieldLabel}" />
+                                    <StackPanel Orientation="Horizontal" Margin="-8,0,0,0">
+                                        <RadioButton x:Name="ModeOnce" GroupName="Mode" Style="{StaticResource SegmentToggle}" Content="DO IT ONCE" Checked="OnModeChanged" />
+                                        <RadioButton x:Name="ModeHold" GroupName="Mode" Style="{StaticResource SegmentToggle}" Content="HOLD KEYS WHILE HELD" Checked="OnModeChanged" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </WrapPanel>
+                            <DockPanel Margin="0,4,0,0">
+                                <Button x:Name="RecordButton" DockPanel.Dock="Left" Click="OnRecord" Margin="0,0,10,0" AutomationProperties.Name="Record gesture">
+                                    <TextBlock x:Name="RecordText" Text="●  RECORD GESTURE" />
+                                </Button>
+                                <Button x:Name="RemoveGestureButton" DockPanel.Dock="Left" Click="OnRemoveGesture" Margin="0,0,14,0" AutomationProperties.Name="Remove recorded gesture">
+                                    <TextBlock Text="REMOVE" />
+                                </Button>
+                                <TextBlock x:Name="GestureStatus" Style="{StaticResource Mono}" FontSize="12" VerticalAlignment="Center" />
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 2. Action -->
+                    <ContentControl Style="{StaticResource SectionBar}" Margin="0,12,0,14">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="2  " Foreground="{StaticResource Pink}" /><TextBlock Text="WHAT SHOULD IT DO?" /></StackPanel>
+                    </ContentControl>
+                    <Border Background="{StaticResource Panel}" Padding="16,14" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock x:Name="HoldNote" Style="{StaticResource Help}" Foreground="{StaticResource TealText}" Margin="0,0,0,10" Visibility="Collapsed"
+                                       Text="These keys go down when you make the gesture and come back up when you let go. Use PRESS steps only." />
+                            <StackPanel x:Name="StepRows" />
+                            <StackPanel x:Name="StepButtons" Orientation="Horizontal" Margin="0,4,0,0">
+                                <Button Click="OnAddStep" Margin="0,0,10,0" AutomationProperties.Name="Add a step">
+                                    <TextBlock Text="+ ADD STEP" />
+                                </Button>
+                            </StackPanel>
+                            <TextBox x:Name="ScriptBox" AcceptsReturn="True" MinHeight="110" VerticalScrollBarVisibility="Auto" Visibility="Collapsed"
+                                     AutomationProperties.Name="Action as text" />
+                            <TextBlock x:Name="ScriptHelp" Style="{StaticResource Help}" Margin="0,6,0,0" Visibility="Collapsed"
+                                       Text="One step per line: ctrl+c, hold w 500, wait 100, type Hello, latch shift, release" />
+                            <Button x:Name="ModeSwitch" Style="{StaticResource LinkButton}" FontSize="14" Margin="-6,10,0,0" Click="OnToggleScript"
+                                    AutomationProperties.Name="Switch between step editor and text">
+                                <TextBlock x:Name="ModeSwitchText" Text="EDIT AS TEXT (ADVANCED)" Foreground="{StaticResource Muted}" />
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 3. Details -->
+                    <ContentControl Style="{StaticResource SectionBar}" Margin="0,12,0,14">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="3  " Foreground="{StaticResource Pink}" /><TextBlock Text="NAME IT" /></StackPanel>
+                    </ContentControl>
+                    <Border Background="{StaticResource Panel}" Padding="16,14">
+                        <StackPanel>
+                            <TextBlock Text="NAME" Style="{StaticResource FieldLabel}" />
+                            <Grid Margin="0,0,0,14">
+                                <TextBox x:Name="NameBox" TextChanged="OnNameChanged" AutomationProperties.Name="Name" />
+                                <TextBlock x:Name="NameHint" Style="{StaticResource Help}" Margin="10,0" VerticalAlignment="Center" IsHitTestVisible="False" />
+                            </Grid>
+                            <TextBlock Text="CATEGORY ON THE CONTROLS SCREEN (OPTIONAL)" Style="{StaticResource FieldLabel}" />
+                            <TextBox x:Name="CategoryBox" Margin="0,0,0,8" AutomationProperties.Name="Category" />
+                            <WrapPanel x:Name="CategoryChips" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ===== Live camera + plain-English summary ===== -->
+            <StackPanel Grid.Column="2">
+                <Grid Height="240">
+                    <c:CameraFeedView x:Name="Feed" ShowSkeleton="True" />
+                    <c:ChamferShape Stroke="{StaticResource Gray}" StrokeThickness="1.2" Chamfer="16" Corner="BottomRight" IsHitTestVisible="False" />
+                </Grid>
+                <TextBlock x:Name="LiveText" Style="{StaticResource Mono}" FontSize="12" Margin="0,10,0,0" />
+                <TextBlock Style="{StaticResource Help}" Margin="0,4,0,18"
+                           Text="Make a saved gesture to see if it's recognised." />
+
+                <TextBlock Text="SUMMARY" Style="{StaticResource FieldLabel}" />
+                <Border BorderBrush="{StaticResource Pink}" BorderThickness="2,0,0,0" Padding="14,4,0,4">
+                    <TextBlock x:Name="SummaryText" Style="{StaticResource Mono}" FontSize="14" LineHeight="22" />
+                </Border>
+            </StackPanel>
+        </Grid>
+    </DockPanel>
+  </Grid>
+</UserControl>

@@ -3,6 +3,9 @@
   "switchPhrases": [ "rocket league mode", "rocket league" ],
   "include": [ "gestures" ],     // voice control for the hand-gesture app, see gestures.json
   "announce": "Rocket League mode",
+  "game": { "title": "Rocket League", "tile": "rocket-league.png", "order": 3 },
+  "handLabels": { "w": "Throttle", "s": "Reverse", "a": "Steer left", "d": "Steer right", "space": "Ball cam",
+                  "lmb": "Boost", "rmb": "Jump" },
   "speakByDefault": false,   // no voice confirmations mid-match; they'd talk over the game
 
   // Uses Rocket League's default keyboard + mouse bindings:
@@ -38,46 +41,46 @@
   "commands": [
 
     // ---- Driving (latched: stays on until you say otherwise) ----
-    { "say": [ "drive", "go" ],                      "do": [ "unlatch s", "latch w" ] },
-    { "say": [ "reverse", "back up" ],               "do": [ "unlatch w", "latch s" ] },
-    { "say": [ "stop", "brake" ],                    "do": [ "release" ] },
+    { "category": "Driving", "label": "Drive", "essential": true, "say": [ "drive", "go" ],                      "do": [ "unlatch s", "latch w" ] },
+    { "category": "Driving", "say": [ "reverse", "back up" ],               "do": [ "unlatch w", "latch s" ] },
+    { "category": "Driving", "essential": true, "say": [ "stop", "brake" ],                    "do": [ "release" ] },
 
     // ---- Directional inputs (timed; scale with modifiers) ----
-    { "say": [ "left" ],                             "baseMs": 350,  "do": [ "hold a {ms}" ] },
-    { "say": [ "right" ],                            "baseMs": 350,  "do": [ "hold d {ms}" ] },
-    { "say": [ "forward" ],                          "baseMs": 600,  "do": [ "hold w {ms}" ] },
-    { "say": [ "back", "backward", "backwards" ],    "baseMs": 600,  "do": [ "hold s {ms}" ] },
-    { "say": [ "turn around", "u turn" ],            "do": [ "down shift", "hold a 900", "up shift" ] },
+    { "category": "Steering", "say": [ "left" ],                             "baseMs": 350,  "do": [ "hold a {ms}" ] },
+    { "category": "Steering", "say": [ "right" ],                            "baseMs": 350,  "do": [ "hold d {ms}" ] },
+    { "category": "Steering", "say": [ "forward" ],                          "baseMs": 600,  "do": [ "hold w {ms}" ] },
+    { "category": "Steering", "say": [ "back", "backward", "backwards" ],    "baseMs": 600,  "do": [ "hold s {ms}" ] },
+    { "category": "Steering", "say": [ "turn around", "u turn" ],            "do": [ "down shift", "hold a 900", "up shift" ] },
 
     // ---- Boost ----
-    { "say": [ "boost" ],                            "baseMs": 1500, "do": [ "hold lmb {ms}" ] },
-    { "say": [ "full boost", "boost on" ],           "do": [ "latch lmb" ] },
-    { "say": [ "boost off", "no boost" ],            "do": [ "unlatch lmb" ] },
+    { "category": "Boost", "label": "Boost", "essential": true, "say": [ "boost" ],                            "baseMs": 1500, "do": [ "hold lmb {ms}" ] },
+    { "category": "Boost", "say": [ "full boost", "boost on" ],           "do": [ "latch lmb" ] },
+    { "category": "Boost", "say": [ "boost off", "no boost" ],            "do": [ "unlatch lmb" ] },
 
     // ---- Jumps (holding jump longer jumps higher, so "big jump" / "little jump" work too) ----
-    { "say": [ "jump" ],                             "baseMs": 60,   "do": [ "tap rmb {ms}" ] },
-    { "say": [ "double jump" ],                      "do": [ "tap rmb 60", "wait 90", "tap rmb 60" ] },
+    { "category": "Jumps", "essential": true, "say": [ "jump" ],                             "baseMs": 60,   "do": [ "tap rmb {ms}" ] },
+    { "category": "Jumps", "say": [ "double jump" ],                      "do": [ "tap rmb 60", "wait 90", "tap rmb 60" ] },
 
     // ---- Flips: jump, then a second jump while holding the direction ----
-    { "say": [ "flip", "front flip", "flip forward", "flip front" ],
+    { "category": "Flips", "label": "Front flip", "essential": true, "say": [ "flip", "front flip", "flip forward", "flip front" ],
       "do": [ "lift", "tap rmb 50", "wait 40", "latch w", "tap rmb 50", "wait 150", "unlatch w", "resume" ] },
-    { "say": [ "backflip", "back flip", "flip back", "flip backward" ],
+    { "category": "Flips", "say": [ "backflip", "back flip", "flip back", "flip backward" ],
       "do": [ "lift", "tap rmb 50", "wait 40", "down s",   "tap rmb 50", "wait 150", "up s",   "resume" ] },
-    { "say": [ "flip left", "side flip left" ],
+    { "category": "Flips", "say": [ "flip left", "side flip left" ],
       "do": [ "lift", "tap rmb 50", "wait 70", "down a",   "tap rmb 50", "wait 150", "up a",   "resume" ] },
-    { "say": [ "flip right", "side flip right" ],
+    { "category": "Flips", "say": [ "flip right", "side flip right" ],
       "do": [ "lift", "tap rmb 50", "wait 70", "down d",   "tap rmb 50", "wait 150", "up d",   "resume" ] },
-    { "say": [ "flip front left", "flip forward left" ],
+    { "category": "Flips", "say": [ "flip front left", "flip forward left" ],
       "do": [ "lift", "tap rmb 50", "wait 70", "down w+a", "tap rmb 50", "wait 150", "up w+a", "resume" ] },
-    { "say": [ "flip front right", "flip forward right" ],
+    { "category": "Flips", "say": [ "flip front right", "flip forward right" ],
       "do": [ "lift", "tap rmb 50", "wait 70", "down w+d", "tap rmb 50", "wait 150", "up w+d", "resume" ] },
-    { "say": [ "flip back left" ],
+    { "category": "Flips", "say": [ "flip back left" ],
       "do": [ "lift", "tap rmb 50", "wait 70", "down s+a", "tap rmb 50", "wait 150", "up s+a", "resume" ] },
-    { "say": [ "flip back right" ],
+    { "category": "Flips", "say": [ "flip back right" ],
       "do": [ "lift", "tap rmb 50", "wait 70", "down s+d", "tap rmb 50", "wait 150", "up s+d", "resume" ] },
 
     // ---- Extras ----
-    { "say": [ "powerslide", "drift" ],              "baseMs": 500,  "do": [ "hold shift {ms}" ] },
-    { "say": [ "ball cam", "camera" ],               "keys": [ "space" ] }
+    { "category": "Extras", "say": [ "powerslide", "drift" ],              "baseMs": 500,  "do": [ "hold shift {ms}" ] },
+    { "category": "Extras", "label": "Ball cam", "essential": true, "say": [ "ball cam", "camera" ],               "keys": [ "space" ] }
   ]
 }

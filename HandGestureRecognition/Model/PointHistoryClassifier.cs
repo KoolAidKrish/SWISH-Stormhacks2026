@@ -13,9 +13,9 @@ public sealed class PointHistoryClassifier : IDisposable
     public PointHistoryClassifier(
         string modelPath = "model/point_history_classifier/point_history_classifier_lstm.onnx",
         float scoreTh = 0.5f,
-        bool tryCuda = true)
+        int? gpuAdapter = null)
     {
-        _session = OnnxSessionFactory.Create(modelPath, tryCuda);
+        _session = OnnxSessionFactory.Create(modelPath, gpuAdapter, out _);
         _inputNames = _session.InputNames.ToArray();   // input [batch, 32], score_threshold (scalar)
         _outputNames = _session.OutputNames.ToArray(); // class_ids int64 [batch]
         _scoreTh = scoreTh;

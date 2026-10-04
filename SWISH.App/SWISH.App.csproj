@@ -22,6 +22,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Bundled fonts (SIL Open Font License, see Fonts/OFL-*.txt) and placeholder-able artwork -->
+    <Resource Include="Fonts\*.ttf" />
+    <Resource Include="Assets\**\*.png" />
+    <!-- MediaElement plays from a file, not a resource -->
+    <Content Include="Assets\Video\*.mp4" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Both console apps double as libraries: their engines run in-process here. -->
     <ProjectReference Include="..\HandGestureRecognition\HandGestureRecognition.csproj" />
     <ProjectReference Include="..\VoiceKeys\VoiceKeys.csproj" />

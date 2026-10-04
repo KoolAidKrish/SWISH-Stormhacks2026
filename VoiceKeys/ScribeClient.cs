@@ -40,7 +40,8 @@ public sealed class ScribeClient : IAsyncDisposable
         else
         {
             q.Add("commit_strategy=vad");
-            q.Add($"vad_silence_threshold_secs={s.VadSilenceSecs.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+            var silence = Math.Clamp(s.VadSilenceSecs, 0.3, 3.0); // the API rejects the session outside this range
+            q.Add($"vad_silence_threshold_secs={silence.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
         }
         if (!string.IsNullOrWhiteSpace(s.LanguageCode))
             q.Add($"language_code={Uri.EscapeDataString(s.LanguageCode)}");

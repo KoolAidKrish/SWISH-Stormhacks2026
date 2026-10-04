@@ -1,0 +1,109 @@
+<UserControl x:Class="Swish.App.Controls.MenuSidebar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Swish.App.Controls"
+             Width="250">
+    <UserControl.Resources>
+        <!-- Full-width outlined menu button, content centred (pause / settings). -->
+        <Style x:Key="MenuButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="Height" Value="42" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Margin" Value="0,10,0,0" />
+        </Style>
+        <Style x:Key="StatusLabel" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid ClipToBounds="True">
+        <!-- Decoration: corner block and a circuit trace down the right edge (drawn to size in code). -->
+        <Polygon Points="0,0 26,0 0,26" Fill="{StaticResource Teal}" IsHitTestVisible="False" />
+        <Canvas x:Name="Decor" IsHitTestVisible="False" />
+
+        <DockPanel Margin="30,30,30,26">
+            <TextBlock DockPanel.Dock="Top" Text="MY GAMES" Style="{StaticResource Heading}" FontSize="26" Margin="0,0,0,14" />
+
+            <StackPanel DockPanel.Dock="Bottom">
+                <!-- Live status -->
+                <Border Background="{StaticResource Bg2}" Padding="14,12" BorderBrush="{StaticResource Line}" BorderThickness="1">
+                    <StackPanel>
+                        <DockPanel>
+                            <Ellipse x:Name="HandsDot" Width="8" Height="8" Margin="0,0,9,0" Fill="{StaticResource Dim}" />
+                            <TextBlock Text="HANDS" Style="{StaticResource StatusLabel}" />
+                            <TextBlock x:Name="HandsText" Style="{StaticResource StatusLabel}" FontWeight="Normal" Foreground="{StaticResource Muted}"
+                                       HorizontalAlignment="Right" />
+                        </DockPanel>
+                        <DockPanel Margin="0,9,0,0">
+                            <Ellipse x:Name="VoiceDot" Width="8" Height="8" Margin="0,0,9,0" Fill="{StaticResource Dim}" />
+                            <TextBlock Text="VOICE" Style="{StaticResource StatusLabel}" />
+                            <TextBlock x:Name="VoiceText" Style="{StaticResource StatusLabel}" FontWeight="Normal" Foreground="{StaticResource Muted}"
+                                       HorizontalAlignment="Right" />
+                        </DockPanel>
+                        <!-- mic level -->
+                        <Grid Height="3" Margin="17,8,0,0">
+                            <Rectangle Fill="{StaticResource Line}" />
+                            <Rectangle x:Name="LevelBar" Fill="{StaticResource TealText}" HorizontalAlignment="Left" Width="0" />
+                        </Grid>
+                        <TextBlock x:Name="HeardText" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Gray}" Margin="17,8,0,0"
+                                   TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Text="Say a command…" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Pause everything (camera and mic both off) | hands only -->
+                <DockPanel Margin="0,14,0,0">
+                    <Button x:Name="HandsButton" DockPanel.Dock="Right" Style="{StaticResource MenuButton}" Width="42" Margin="10,0,0,0" Padding="0"
+                            Click="OnHands" ToolTip="Turn hand tracking off (camera closed); voice keeps working"
+                            AutomationProperties.Name="Turn hand tracking off">
+                        <Grid>
+                            <TextBlock Text="✋" FontFamily="Segoe UI Symbol" FontSize="17" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <Line x:Name="HandsSlash" X1="0" Y1="22" X2="22" Y2="0" Stroke="{StaticResource Pink}" StrokeThickness="2.5"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
+                        </Grid>
+                    </Button>
+                    <Button x:Name="PauseButton" Style="{StaticResource MenuButton}" Click="OnPause" Margin="0"
+                            ToolTip="Stops the camera and the microphone: nothing is recorded, transcribed or sent"
+                            AutomationProperties.Name="Pause SWISH: camera and microphone off">
+                        <TextBlock x:Name="PauseText" Text="❚❚   PAUSE" />
+                    </Button>
+                </DockPanel>
+                <Button x:Name="SettingsButton" Style="{StaticResource MenuButton}" Click="OnSettings" AutomationProperties.Name="Settings">
+                    <TextBlock Text="⚙   SETTINGS" />
+                </Button>
+            </StackPanel>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False" Margin="0,0,0,14">
+                <StackPanel>
+                    <ListBox x:Name="Games" Background="Transparent" BorderThickness="0" SelectionChanged="OnGameChanged"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                             AutomationProperties.Name="My games" KeyboardNavigation.TabNavigation="Once" />
+                    <!-- Adding games isn't built yet; the button is here so the place for it exists. -->
+                    <Button x:Name="MoreGamesButton" Click="OnMoreGames" HorizontalAlignment="Stretch" Height="48" Margin="0,2,0,0"
+                            BorderBrush="{StaticResource Dim}" Foreground="{StaticResource Gray}" AutomationProperties.Name="Add more games">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Grid Background="Transparent">
+                                    <Rectangle x:Name="Edge" RadiusX="8" RadiusY="8" Stroke="{TemplateBinding BorderBrush}" StrokeThickness="1.5" StrokeDashArray="4 3" />
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Grid>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Edge" Property="Stroke" Value="{StaticResource Pink}" />
+                                        <Setter Property="Foreground" Value="{StaticResource Pink}" />
+                                    </Trigger>
+                                    <Trigger Property="IsKeyboardFocused" Value="True">
+                                        <Setter TargetName="Edge" Property="Stroke" Value="{StaticResource Pink}" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                        <TextBlock Text="+  MORE GAMES" FontFamily="{StaticResource DisplayFont}" FontWeight="Bold" FontSize="18" />
+                    </Button>
+                </StackPanel>
+            </ScrollViewer>
+        </DockPanel>
+    </Grid>
+</UserControl>

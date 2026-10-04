@@ -11,6 +11,8 @@ public readonly record struct PalmHand(double SqnRrSize, double Rotation, double
 public sealed class PalmDetection : IDisposable
 {
     private readonly InferenceSession _session;
+    /// <summary>True if the model runs on the GPU (DirectML); false if on the CPU (asked for, or fallback).</summary>
+    public bool OnGpu { get; }
     private readonly string _inputName;
     private readonly string[] _outputNames;
     private readonly int _inputH;
@@ -23,10 +25,11 @@ public sealed class PalmDetection : IDisposable
     public PalmDetection(
         string modelPath = "model/palm_detection/palm_detection_full_inf_post_192x192.onnx",
         float scoreThreshold = 0.60f,
-        bool tryCuda = true)
+        int? gpuAdapter = null)
     {
         _scoreThreshold = scoreThreshold;
-        _session = OnnxSessionFactory.Create(modelPath, tryCuda);
+        _session = OnnxSessionFactory.Create(modelPath, gpuAdapter, out bool onGpu);
+        OnGpu = onGpu;
         _inputName = _session.InputNames[0];
         var dims = _session.InputMetadata[_inputName].Dimensions; // [1, 3, 192, 192]
         _inputH = dims[2];

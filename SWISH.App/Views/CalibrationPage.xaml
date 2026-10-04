@@ -1,0 +1,39 @@
+<UserControl x:Class="Swish.App.Views.CalibrationPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Swish.App.Controls"
+             Background="Black">
+    <Grid>
+        <c:CameraFeedView x:Name="Feed" Look="Grayscale" />
+        <Rectangle Fill="#38000000" IsHitTestVisible="False" />
+
+        <!-- The path, in screen coordinates (this page covers the whole primary monitor) -->
+        <Canvas x:Name="PathLayer" IsHitTestVisible="False" />
+
+        <!-- Hand lost / status -->
+        <Border x:Name="StatusBox" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,28,0,0" Padding="16,8"
+                Background="#D0000000" BorderBrush="{StaticResource Pink}" BorderThickness="1.5" Visibility="Collapsed">
+            <TextBlock x:Name="StatusText" Style="{StaticResource Mono}" FontSize="15" AutomationProperties.LiveSetting="Assertive" />
+        </Border>
+
+        <!-- Result if the fit was rejected -->
+        <Border x:Name="FailBox" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="32,26" MaxWidth="640"
+                Background="#E6161616" BorderBrush="{StaticResource Gray}" BorderThickness="1" Visibility="Collapsed">
+            <StackPanel>
+                <TextBlock Text="LET'S TRY THAT AGAIN" Style="{StaticResource Heading}" FontSize="40" HorizontalAlignment="Center" />
+                <TextBlock x:Name="FailText" Style="{StaticResource Mono}" FontSize="15" TextAlignment="Center" Margin="0,10,0,22" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button x:Name="RetryButton" Style="{StaticResource PrimaryButton}" Click="OnRetry" Margin="0,0,12,0">
+                        <TextBlock Text="↻  TRY AGAIN" />
+                    </Button>
+                    <Button Click="OnCancel"><TextBlock Text="✕  CANCEL" /></Button>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <Button x:Name="CancelButton" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,40,36"
+                Background="#99000000" Click="OnCancel" AutomationProperties.Name="Cancel calibration">
+            <TextBlock Text="✕  CANCEL" />
+        </Button>
+    </Grid>
+</UserControl>

@@ -10,9 +10,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- CPU build. For CUDA, swap this for Microsoft.ML.OnnxRuntime.Gpu (same version). -->
-    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.20.1" />
+    <!-- DirectML build: the CPU provider plus any DirectX 12 GPU (Settings › GPU) -->
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.24.4" />
     <PackageReference Include="OpenCvSharp4" Version="4.10.0.20241108" />
+  </ItemGroup>
+
+  <!-- The DirectML package only copies DirectML.dll for an explicit x64 build; ship it for AnyCPU (64-bit) too.
+       ONNX Runtime needs this version, not the older one in System32. -->
+  <ItemGroup Condition="'$(Microsoft_AI_DirectML_Bin_Dir_Windows_x64)' != ''">
+    <None Include="$(Microsoft_AI_DirectML_Bin_Dir_Windows_x64)\DirectML.dll" Link="DirectML.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
   </ItemGroup>
 
   <!-- Ship the models next to the build output, so a host app (SWISH.App) can find them without

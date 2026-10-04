@@ -14,6 +14,13 @@ public sealed class SnakePath
 
     readonly double _xLeft, _xRight, _top, _radius, _straight, _turn;
 
+    /// <summary>Rows of the snake (top to bottom).</summary>
+    public int RowCount => Rows;
+    /// <summary>Screen y of a row, and the x extent of the straight parts (turns bulge out past these).</summary>
+    public double RowY(int row) => _top + row * 2 * _radius;
+    public double Left => _xLeft;
+    public double Right => _xRight;
+
     /// <summary>Dot speed in screen px per second.</summary>
     public double Speed { get; }
     /// <summary>Total length of the route in px.</summary>

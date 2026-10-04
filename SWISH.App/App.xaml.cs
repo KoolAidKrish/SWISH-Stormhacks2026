@@ -3,6 +3,9 @@ using System.IO;
 using System.Windows;
 using System.Windows.Threading;
 using HandGestureRecognition;
+using HandGestureRecognition.Mouse;
+using Swish.App.Services;
+using Swish.App.Views;
 using VoiceKeys;
 
 namespace Swish.App;
@@ -11,35 +14,37 @@ namespace Swish.App;
 /// One process, two engines:
 ///   GestureEngine  webcam → hand landmarks → mouse        (its own thread)
 ///   VoiceEngine    mic → ElevenLabs STT → keystrokes      (async, WebSocket thread)
-/// This class owns both, the tray icon and the dashboard window. Either engine can fail on its
-/// own (no camera, no API key) without taking the other down.
-///
-/// The voice "gestures" commands still press Ctrl+Alt+M/J/V, which the gesture engine polls,
-/// so the two talk to each other the same way here as when they ran as separate programs.
+/// This class owns both, the tray icon, the main SWISH window (ShellWindow) and the debug dashboard
+/// (MainWindow, reachable from Settings › Advanced). Either engine can fail on its own (no camera,
+/// no API key) without taking the other down.
 /// </summary>
 public partial class App : Application
 {
     Mutex? _singleInstance;
     TrayIcon? _tray;
-    MainWindow? _window;
+    ShellWindow? _shell;
+    MainWindow? _debug;
     DispatcherTimer? _trayTimer;
     readonly CancellationTokenSource _voiceStop = new();
     Task? _voiceTask;
 
     public GestureEngine Gestures { get; private set; } = null!;
     public VoiceEngine? Voice { get; private set; }
+    /// <summary>Presets and voice settings, loaded even when voice itself can't run (no API key).</summary>
+    public AppConfig? Config { get; private set; }
     /// <summary>Why voice isn't running (missing API key, bad preset file...), for the UI.</summary>
     public string? VoiceProblem { get; private set; }
     public bool IsExiting { get; private set; }
     /// <summary>The user's custom gesture/voice functions.</summary>
     public CustomFunctionManager CustomFunctions { get; private set; } = null!;
-    CustomFunctionsWindow? _customWindow;
+    public UiSettings Settings { get; private set; } = new();
 
-    // There's one stream of preview frames. Whichever window claimed it most recently gets them
-    // (the recorder over the custom-functions window over the main window).
-    readonly List<object> _previewClaims = new();
+    public static string DataDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SWISH");
+    string CalibrationPath => Path.Combine(DataDir, "calibration.json");
 
-    static string DataDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SWISH");
+    // There's one stream of preview frames. Whichever view claimed it most recently gets them; each
+    // claim says whether it wants the plain picture (styled UI) or the annotated debug view.
+    readonly List<(object Owner, bool Clean)> _previewClaims = new();
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -56,6 +61,15 @@ public partial class App : Application
             return;
         }
 
+        // An unexpected error in a screen shouldn't fail silently or take the engines down: log it and say so.
+        DispatcherUnhandledException += (_, args) =>
+        {
+            try { File.AppendAllText(Path.Combine(DataDir, "errors.log"), $"{DateTime.Now:u} {args.Exception}\n\n"); } catch { }
+            MessageBox.Show($"Something went wrong:\n\n{args.Exception.Message}\n\nDetails were saved to errors.log in {DataDir}.",
+                            "SWISH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            args.Handled = true;
+        };
+
         _singleInstance = new Mutex(true, @"Local\SWISH.App", out bool isFirst);
         if (!isFirst)
         {
@@ -65,13 +79,17 @@ public partial class App : Application
         }
         Directory.CreateDirectory(DataDir);
         GestureEngine.DisableBackgroundThrottling();
+        Settings = UiSettings.Load(DataDir);
 
         // ---- Hand gestures ----
         Gestures = new GestureEngine(new GestureOptions
         {
+            Device = Settings.Camera,
+            GpuAdapter = Services.GpuDevices.List().FirstOrDefault(g => g.Name == Settings.Gpu)?.Index,
             ModelDir = Path.Combine(AppContext.BaseDirectory, "Model"),
-            CalibrationPath = Path.Combine(DataDir, "calibration.json"),
-            UseOpenCvWindow = false,    // the dashboard shows the preview instead
+            CalibrationPath = CalibrationPath,
+            UseOpenCvWindow = false,        // the app draws its own preview
+            CalibrateWhenMissing = false,   // the app has its own calibration screens
         });
         Gestures.ToggleWindowRequested += () => Dispatcher.BeginInvoke(ToggleWindow);
         Gestures.QuitRequested += () => Dispatcher.BeginInvoke(Shutdown);
@@ -89,21 +107,23 @@ public partial class App : Application
             showWindow: ShowWindow,
             toggleHandMouse: Gestures.ToggleMouse,
             toggleVoice: () => { if (Voice is not null) Voice.Paused = !Voice.Paused; },
-            choosePreset: id => { if (Voice?.Config.FindPreset(id) is { } p) Voice.SwitchPreset(p); },
-            recalibrate: () => Gestures.Recalibrate(HandGestureRecognition.Mouse.CalibrationKind.Points),
-            recalibratePursuit: () => Gestures.Recalibrate(HandGestureRecognition.Mouse.CalibrationKind.Pursuit),
-            customFunctions: ShowCustomFunctions,
+            choosePreset: SelectGame,
+            recalibrate: () => { ShowWindow(); _shell?.Navigate(new HowToCalibratePage(exitTo: () => new ControlsPage())); },
+            customFunctions: () => ShowCommandEditor(),
             openPresetsFolder: () => Process.Start("explorer.exe", Path.Combine(AppContext.BaseDirectory, "presets")),
             exit: Shutdown);
-        if (Voice is not null) _tray.SetPresets(Voice.SwitchablePresets.Select(p => (p.Id, p.Name)));
+        if (Config is not null) _tray.SetPresets(Config.Presets.Where(p => p.Switchable).Select(p => (p.Id, p.Name)));
         _trayTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(500), DispatcherPriority.Background, (_, _) => UpdateTray(), Dispatcher);
         _trayTimer.Start();
 
-        // The window subscribes to engine events, so it exists before they start.
-        _window = new MainWindow(this);
+        // The debug dashboard subscribes to engine events at construction, so it exists (hidden) from the start.
+        _debug = new MainWindow(this);
+        _shell = new ShellWindow(this);
+        _shell.Navigate(HasCalibration() ? new ControlsPage() : new HomePage());
+
         if (e.Args.Contains("--no-splash"))
         {
-            _window.Show();
+            ShowWindow();
         }
         else
         {
@@ -120,16 +140,19 @@ public partial class App : Application
 
     VoiceEngine? TryCreateVoice()
     {
-        AppConfig cfg;
         try
         {
-            cfg = AppConfig.Load(Path.Combine(AppContext.BaseDirectory, "settings.json"), Path.Combine(AppContext.BaseDirectory, "presets"));
+            Config = AppConfig.Load(Path.Combine(AppContext.BaseDirectory, "settings.json"), Path.Combine(AppContext.BaseDirectory, "presets"));
         }
         catch (Exception ex)
         {
             VoiceProblem = $"Couldn't load voice settings: {ex.Message}";
             return null;
         }
+        Config.MicDevice = Settings.Microphone;
+        if (Settings.SpeechVoice is { Length: > 0 } speechVoice) Config.Speech.VoiceId = speechVoice;
+        if (Settings.SpeechVolume is { } speechVolume) Config.Speech.Volume = Math.Clamp(speechVolume, 0, 1);
+        if (Settings.Game is { } game && Config.FindPreset(game) is not null) Config.Preset = game;
 
         // setx only reaches processes started afterwards (and Visual Studio caches its environment),
         // so fall back to reading the user environment directly.
@@ -141,7 +164,7 @@ public partial class App : Application
             return null;
         }
 
-        try { return new VoiceEngine(cfg, apiKey, cfg.FindPreset(cfg.Preset)!); }
+        try { return new VoiceEngine(Config, apiKey, Config.FindPreset(Config.Preset)!) { SpeechMuted = Settings.SpeechMuted }; }
         catch (Exception ex)
         {
             VoiceProblem = $"Voice couldn't start: {ex.Message}";
@@ -149,48 +172,128 @@ public partial class App : Application
         }
     }
 
-    public void ShowCustomFunctions()
+    // ---- Shared actions used by the screens ----
+
+    /// <summary>Is there a saved calibration for this screen? (Then launch skips the calibration flow.)</summary>
+    public bool HasCalibration()
     {
-        if (_customWindow is null)
-        {
-            _customWindow = new CustomFunctionsWindow(this, CustomFunctions);
-            if (_window?.IsVisible == true) _customWindow.Owner = _window;
-            _customWindow.Closed += (_, _) => _customWindow = null;
-            _customWindow.Show();
-        }
-        _customWindow.Activate();
+        var (w, h) = NativeMouse.PrimaryScreenSize();
+        return CalibrationData.TryLoad(CalibrationPath, w, h) is not null;
     }
 
-    public void ClaimPreview(object owner)
+    /// <summary>The game whose controls are shown (and whose voice preset is active).</summary>
+    public string? CurrentGame => Voice?.ActivePreset.Id ?? Settings.Game ?? Config?.Preset;
+
+    public void SelectGame(string presetId)
     {
-        _previewClaims.Remove(owner);
-        _previewClaims.Add(owner);
-        _window?.UpdatePreviewFlag();
+        if (Config?.FindPreset(presetId) is not { } preset) return;
+        Voice?.SwitchPreset(preset);
+        Settings.Game = presetId;
+        Settings.Save(DataDir);
+    }
+
+    readonly object _handsGate = new();
+
+    /// <summary>Hand tracking is off: camera closed, models stopped (no CPU), nothing sent.</summary>
+    public bool HandsOff { get; private set; }
+    /// <summary>The microphone is off: nothing recorded or transcribed (or there's no voice at all).</summary>
+    public bool VoiceOff => Voice?.MicOff ?? true;
+    /// <summary>Paused: both off. Nothing is recorded, transcribed or sent.</summary>
+    public bool IsPaused => HandsOff && VoiceOff;
+
+    public void SetHandsOff(bool off)
+    {
+        if (HandsOff == off) return;
+        HandsOff = off;
+        // Opening/closing the camera takes a moment; keep it off the UI thread, one switch at a time.
+        Task.Run(() => { lock (_handsGate) { if (HandsOff) Gestures.Stop(); else Gestures.Start(); } });
+    }
+
+    public void SetPaused(bool paused)
+    {
+        SetHandsOff(paused);
+        if (Voice is not null) Voice.MicOff = paused;
+    }
+
+    public void SelectCamera(int index)
+    {
+        Settings.Camera = index;
+        Settings.Save(DataDir);
+        Task.Run(() => Gestures.SwitchCamera(index));   // closing a camera can take a moment
+    }
+
+    /// <summary>Runs the hand models on this GPU, or the CPU (null). The engine reloads them on its own thread.</summary>
+    public void SelectGpu(Services.GpuDevices.Gpu? gpu)
+    {
+        Settings.Gpu = gpu?.Name;
+        Settings.Save(DataDir);
+        Task.Run(() => Gestures.SwitchGpu(gpu?.Index));   // restarting tracking (camera + models) takes a moment
+    }
+
+    public void SelectMicrophone(int index)
+    {
+        Settings.Microphone = index;
+        Settings.Save(DataDir);
+        if (Voice is not null) Voice.SwitchMic(index);
+        else if (Config is not null) Config.MicDevice = index;
+    }
+
+    /// <summary>Opens the command editor in the main window: editing a saved command, or a new one
+    /// (pre-set to a game/category, and starting with a gesture or a phrase as its trigger).</summary>
+    public void ShowCommandEditor(CustomFunction? edit = null, string? game = null, string? category = null, bool gesture = false)
+    {
+        ShowWindow();
+        _shell?.Navigate(new CommandEditorPage(edit, game ?? CurrentGame, category, gesture));
+    }
+
+    public void ShowDebugDashboard()
+    {
+        if (_debug is null) return;
+        _debug.Show();
+        if (_debug.WindowState == WindowState.Minimized) _debug.WindowState = WindowState.Normal;
+        _debug.Activate();
+    }
+
+    // ---- Preview ownership ----
+
+    public void ClaimPreview(object owner, bool clean = true)
+    {
+        _previewClaims.RemoveAll(c => c.Owner == owner);
+        _previewClaims.Add((owner, clean));
+        UpdatePreview();
     }
 
     public void ReleasePreview(object owner)
     {
-        _previewClaims.Remove(owner);
-        _window?.UpdatePreviewFlag();
+        _previewClaims.RemoveAll(c => c.Owner == owner);
+        UpdatePreview();
     }
 
-    /// <summary>Should this window take the preview frames right now?</summary>
-    public bool OwnsPreview(object owner) => _previewClaims.Count > 0 ? _previewClaims[^1] == owner : owner == _window;
+    /// <summary>Should this view take the preview frames right now?</summary>
+    public bool OwnsPreview(object owner) => _previewClaims.Count > 0 ? _previewClaims[^1].Owner == owner : owner == _debug;
 
     public bool PreviewClaimed => _previewClaims.Count > 0;
 
+    /// <summary>Preview frames are only produced while someone can see them; plain or annotated per the owner.</summary>
+    public void UpdatePreview()
+    {
+        bool debugSeen = _debug is { IsVisible: true } d && d.WindowState != WindowState.Minimized;
+        Gestures.PreviewEnabled = _previewClaims.Count > 0 || debugSeen;
+        Gestures.PreviewClean = _previewClaims.Count > 0 && _previewClaims[^1].Clean;
+    }
+
     void ShowWindow()
     {
-        if (_window is null) return;
-        _window.Show();
-        if (_window.WindowState == WindowState.Minimized) _window.WindowState = WindowState.Normal;
-        _window.Activate();
+        if (_shell is null) return;
+        _shell.Show();
+        if (_shell.WindowState == WindowState.Minimized) _shell.WindowState = WindowState.Normal;
+        _shell.Activate();
     }
 
     void ToggleWindow()
     {
-        if (_window is null) return;
-        if (_window.IsVisible) _window.Hide(); else ShowWindow();
+        if (_shell is null) return;
+        if (_shell.IsVisible) _shell.Hide(); else ShowWindow();
     }
 
     void UpdateTray() =>
@@ -204,7 +307,8 @@ public partial class App : Application
         try { _voiceTask?.Wait(TimeSpan.FromSeconds(3)); } catch { /* shutting down anyway */ }
         Voice?.DisposeAsync().AsTask().Wait(TimeSpan.FromSeconds(2));
         Gestures?.Dispose();   // stops the loop, releases the mouse button and the camera
-        _window?.Close();
+        _shell?.Close();
+        _debug?.Close();
         _tray?.Dispose();
         _singleInstance?.Dispose();
         base.OnExit(e);

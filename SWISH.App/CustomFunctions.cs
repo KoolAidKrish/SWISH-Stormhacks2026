@@ -30,6 +30,10 @@ public sealed class CustomFunction
     public TriggerMode Mode { get; set; } = TriggerMode.Once;
     /// <summary>The recorded gesture, or null for a voice-only function.</summary>
     public CustomGesture? Gesture { get; set; }
+    /// <summary>Preset id of the game it belongs to (its voice phrases only work there), or null for every game.</summary>
+    public string? Game { get; set; }
+    /// <summary>Group on the controls screen (e.g. "Items"); null shows it under "Your commands".</summary>
+    public string? Category { get; set; }
 
     [JsonIgnore]
     public string Summary =>
@@ -80,7 +84,10 @@ public sealed class CustomFunction
     {
         if (VoicePhrases.Count == 0) return null;
         // Speak left null: spoken confirmation follows the active preset (games stay quiet).
-        var cmd = new CommandDef { Say = VoicePhrases, Do = StepLines(Action) };
+        var cmd = new CommandDef
+        {
+            Say = VoicePhrases, Do = StepLines(Action), Label = Name, Category = Category, OnlyInPreset = Game,
+        };
         cmd.Compile(new Preset());
         return cmd;
     }

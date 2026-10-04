@@ -8,13 +8,13 @@
   "name": "Gestures",
 
   "commands": [
-    { "say": [ "toggle hand mouse", "hand mouse", "toggle gestures", "gestures" ],
+    { "category": "Hand tracking", "say": [ "toggle hand mouse", "hand mouse", "toggle gestures", "gestures" ],
       "keys": [ "ctrl+alt+m" ], "holdMs": 150, "speak": "Hand mouse toggled" },
 
-    { "say": [ "mouse mode", "next mouse mode", "switch mouse mode" ],
+    { "category": "Hand tracking", "say": [ "mouse mode", "next mouse mode", "switch mouse mode" ],
       "keys": [ "ctrl+alt+j" ], "holdMs": 150, "speak": "Mouse mode changed" },
 
-    { "say": [ "show camera", "hide camera", "toggle camera", "camera view" ],
+    { "category": "Hand tracking", "say": [ "show camera", "hide camera", "toggle camera", "camera view" ],
       "keys": [ "ctrl+alt+v" ], "holdMs": 150, "speak": "Camera view toggled" }
   ]
 }

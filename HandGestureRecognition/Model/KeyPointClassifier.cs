@@ -11,9 +11,9 @@ public sealed class KeyPointClassifier : IDisposable
 
     public KeyPointClassifier(
         string modelPath = "model/keypoint_classifier/keypoint_classifier.onnx",
-        bool tryCuda = true)
+        int? gpuAdapter = null)
     {
-        _session = OnnxSessionFactory.Create(modelPath, tryCuda);
+        _session = OnnxSessionFactory.Create(modelPath, gpuAdapter, out _);
         _inputName = _session.InputNames[0];
         _outputNames = _session.OutputNames.ToArray();
     }

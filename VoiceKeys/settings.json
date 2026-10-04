@@ -6,16 +6,17 @@
   "scribe": {
     "modelId": "scribe_v2_realtime",
     "languageCode": "en",
-    "vadSilenceSecs": 0.4,   // open mic only: pause this long after speaking and the command fires
+    "vadSilenceSecs": 0.3,   // open mic: pause this long after speaking and the command fires (0.3 is the API minimum)
     "useKeyterms": true      // bias recognition toward the active preset's phrases
   },
 
   "micDevice": 0,            // run with --list-mics to see the options
 
-  // Hold the key to talk; releasing it finalizes the command immediately (~100 ms).
-  // Off = open mic, where ElevenLabs waits for vadSilenceSecs of silence instead.
+  // Off (current) = continuous listening: everything the mic hears is transcribed, and a command
+  // fires once you've been quiet for vadSilenceSecs (or mid-sentence, with fireOnPartial).
+  // On = hold the key to talk; releasing it finalizes the command immediately (~100 ms).
   "pushToTalk": {
-    "enabled": true,
+    "enabled": false,
     "key": "capslock",       // any key name, or mouse3 / mouse4 / mouse5. The game still sees it.
     "prerollMs": 300,        // include audio from just before the press
     "tailMs": 150            // keep sending briefly after release

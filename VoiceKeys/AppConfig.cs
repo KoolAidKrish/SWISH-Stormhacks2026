@@ -108,6 +108,23 @@ public sealed class Preset
     public int MaxMs { get; set; } = 4000;
 
     [JsonIgnore] public string AnnounceLine => Announce ?? $"{Name} mode";
+
+    /// <summary>Set for presets that appear as a game in the app (title, tile image, order).</summary>
+    public GameInfo? Game { get; set; }
+
+    /// <summary>
+    /// What the hand controls do in this game, by key: the left-hand finger keys (space, d, w, a, s) and the
+    /// right-hand clicks (lmb, rmb). Shown on the controls screen, e.g. { "w": "Forward", "lmb": "Attack" }.
+    /// </summary>
+    public Dictionary<string, string> HandLabels { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+}
+
+public sealed class GameInfo
+{
+    public string Title { get; set; } = "";
+    /// <summary>Tile image file name under the app's Assets/Games folder (optional; a placeholder is drawn without it).</summary>
+    public string? Tile { get; set; }
+    public int Order { get; set; }
 }
 
 public sealed class ScribeSettings
@@ -166,6 +183,17 @@ public sealed class CommandDef
     public int? HoldMs { get; set; }
     /// <summary>Spoken confirmation; "" for silence. Null falls back to speakByDefault.</summary>
     public string? Speak { get; set; }
+
+    /// <summary>Display name on the controls screen (defaults to the first phrase).</summary>
+    public string? Label { get; set; }
+    /// <summary>Group on the controls screen, e.g. "Items".</summary>
+    public string? Category { get; set; }
+    /// <summary>Shown up front on the controls screen; the rest sit in their category.</summary>
+    public bool Essential { get; set; }
+    /// <summary>For custom commands: only active in this preset (null = every preset).</summary>
+    [JsonIgnore] public string? OnlyInPreset { get; set; }
+
+    [JsonIgnore] public string DisplayLabel => Label ?? (Say.Count > 0 ? char.ToUpper(Say[0][0]) + Say[0][1..] : "");
 
     /// <summary>
     /// Makes the command scalable by modifier words. Write "{ms}" in "do" where the duration goes

@@ -1,0 +1,19 @@
+<UserControl x:Class="Swish.App.Controls.CameraFeedView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Swish.App.Controls"
+             Focusable="False">
+    <Grid x:Name="Root" ClipToBounds="True" Background="{StaticResource Bg2}">
+        <!-- The picture and the skeleton share one camera-pixel coordinate space, scaled together. -->
+        <Viewbox x:Name="Fit" Stretch="UniformToFill">
+            <Grid x:Name="Frame" Width="640" Height="480">
+                <Image x:Name="Picture" Stretch="Fill" RenderOptions.BitmapScalingMode="Linear" />
+                <c:HandSkeletonLayer x:Name="Skeleton" />
+                <!-- Extra drawing in camera pixels (e.g. the demo path on "How to calibrate") -->
+                <Canvas x:Name="OverlayHost" />
+            </Grid>
+        </Viewbox>
+        <TextBlock x:Name="Placeholder" Text="STARTING CAMERA…" Style="{StaticResource Mono}" Foreground="{StaticResource Muted}"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+    </Grid>
+</UserControl>

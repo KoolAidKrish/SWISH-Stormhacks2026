@@ -31,7 +31,25 @@ public sealed class MicCapture : IDisposable
             var copy = new byte[e.BytesRecorded];
             Buffer.BlockCopy(e.Buffer, 0, copy, 0, e.BytesRecorded);
             ChunkAvailable?.Invoke(copy);
+            if (LevelChanged is { } level) level(Level(copy));
         };
+    }
+
+    /// <summary>Loudness of each chunk, 0 (silence) to 1 (full scale), on a log scale like a VU meter.</summary>
+    public event Action<float>? LevelChanged;
+
+    static float Level(byte[] pcm16)
+    {
+        double sum = 0;
+        int n = pcm16.Length / 2;
+        for (int i = 0; i < n; i++)
+        {
+            short s = (short)(pcm16[2 * i] | pcm16[2 * i + 1] << 8);
+            sum += (double)s * s;
+        }
+        double rms = Math.Sqrt(sum / Math.Max(1, n)) / 32768.0;
+        double db = 20 * Math.Log10(Math.Max(rms, 1e-5));       // -100 .. 0 dBFS
+        return (float)Math.Clamp((db + 60) / 60, 0, 1);         // -60 dBFS = empty, 0 dBFS = full
     }
 
     public static IEnumerable<(int Index, string Name)> ListDevices()

@@ -1,0 +1,21 @@
+<UserControl x:Class="Swish.App.Views.CalibrationCompletePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Swish.App.Controls"
+             Background="Black">
+    <Grid>
+        <c:CameraFeedView Look="Grayscale" />
+        <Rectangle Fill="#55000000" IsHitTestVisible="False" />
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+            <TextBlock Text="CALIBRATION&#10;COMPLETE!" Style="{StaticResource Display}" FontWeight="Bold" FontSize="96"
+                       LineHeight="88" LineStackingStrategy="BlockLineHeight" TextAlignment="Center" HorizontalAlignment="Center"
+                       AutomationProperties.LiveSetting="Assertive" />
+            <Button x:Name="ContinueButton" HorizontalAlignment="Center" Margin="0,26,0,0" FontSize="15" Background="#66000000"
+                    Click="OnContinue" AutomationProperties.Name="Continue to controls">
+                <TextBlock Text="✓  CONTINUE" />
+            </Button>
+            <TextBlock x:Name="SummaryText" Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Gray}"
+                       HorizontalAlignment="Center" Margin="0,18,0,0" />
+        </StackPanel>
+    </Grid>
+</UserControl>

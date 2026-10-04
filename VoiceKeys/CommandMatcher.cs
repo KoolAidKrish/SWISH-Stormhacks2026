@@ -52,7 +52,8 @@ public sealed class CommandMatcher
         _fillers = cfg.FillerWords.Select(Normalize).ToHashSet();
         _dictationPrefixes = cfg.DictationPrefixes.Select(Normalize).ToHashSet();
 
-        _extra = extra ?? [];
+        // Custom commands made for one game only apply while that game's preset is active.
+        _extra = (extra ?? []).Where(c => c.OnlyInPreset is null || c.OnlyInPreset.Equals(preset.Id, StringComparison.OrdinalIgnoreCase)).ToList();
         var commandPhrases = preset.Commands.Concat(_extra)
             .SelectMany(c => c.Say.Select(p => (Words: Tokenize(p), Cmd: (CommandDef?)c)))
             .Where(p => p.Words.Length > 0)
