@@ -1,0 +1,20 @@
+{
+  // Shared command set: voice control for the hand-gesture app (HandGestureRecognition).
+  // Not a preset you switch to (no switchPhrases); other presets pull it in with "include": [ "gestures" ].
+  //
+  // These press the gesture app's own global hotkeys (Ctrl+Alt+M / J / V), so it doesn't need to know
+  // VoiceKeys exists. The app checks hotkeys once per camera frame, so each is held for 150 ms to make
+  // sure a frame sees it. They're toggles, so the spoken line says "toggled" rather than guessing the state.
+  "name": "Gestures",
+
+  "commands": [
+    { "say": [ "toggle hand mouse", "hand mouse", "toggle gestures", "gestures" ],
+      "keys": [ "ctrl+alt+m" ], "holdMs": 150, "speak": "Hand mouse toggled" },
+
+    { "say": [ "mouse mode", "next mouse mode", "switch mouse mode" ],
+      "keys": [ "ctrl+alt+j" ], "holdMs": 150, "speak": "Mouse mode changed" },
+
+    { "say": [ "show camera", "hide camera", "toggle camera", "camera view" ],
+      "keys": [ "ctrl+alt+v" ], "holdMs": 150, "speak": "Camera view toggled" }
+  ]
+}

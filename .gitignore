@@ -1,1 +1,11 @@
 output.mp4
+# Build output and IDE state
+VoiceKeys/bin/
+VoiceKeys/obj/
+SWISH.App/bin/
+SWISH.App/obj/
+# Arron's project has older build output committed; this stops new build files being added
+HandGestureRecognition/bin/
+HandGestureRecognition/obj/
+.vs/
+*.user

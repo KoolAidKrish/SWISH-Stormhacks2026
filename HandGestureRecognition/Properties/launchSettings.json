@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "HandGestureRecognition": {
+      "commandName": "Project",
+      "workingDirectory": "$(ProjectDir)"
+    }
+  }
+}
