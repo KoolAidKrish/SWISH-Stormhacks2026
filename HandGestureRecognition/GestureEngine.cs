@@ -434,6 +434,7 @@ public sealed class GestureEngine : IDisposable
 
                 // ===================================================== PalmDetection
                 var hands = palmDetection.Run(image);
+                
                 if (hands.Count > 0)
                 {
                     lastHandSeen = mouseClock.Elapsed.TotalSeconds;
@@ -461,16 +462,9 @@ public sealed class GestureEngine : IDisposable
                     {
                         int cx = (int)(hand.SqnRrCenterX * capWidth);
                         int cy = (int)(hand.SqnRrCenterY * capHeight);
-                        int xmin = (int)((hand.SqnRrCenterX - hand.SqnRrSize / 2) * capWidth);
-                        int xmax = (int)((hand.SqnRrCenterX + hand.SqnRrSize / 2) * capWidth);
-                        int ymin = (int)((hand.SqnRrCenterY - hand.SqnRrSize * whRatio / 2) * capHeight);
-                        int ymax = (int)((hand.SqnRrCenterY + hand.SqnRrSize * whRatio / 2) * capHeight);
-                        xmin = Math.Max(0, xmin);
-                        xmax = Math.Min(capWidth, xmax);
-                        ymin = Math.Max(0, ymin);
-                        ymax = Math.Min(capHeight, ymax);
+                        int size = (int)(hand.SqnRrSize * capWidth);   // square crop; padding covers anything off-frame
                         double degree = hand.Rotation * 180.0 / Math.PI;
-                        rects.Add(new RotRect(cx, cy, xmax - xmin, ymax - ymin, (float)degree));
+                        rects.Add(new RotRect(cx, cy, size, size, (float)degree));
                     }
 
                     // Palm crops with rotation corrected to 0 degrees
@@ -772,7 +766,7 @@ public sealed class GestureEngine : IDisposable
                 }
 
                 // Keyboard control ##############################################
-                keyboard.Update(keyboardInput); // null while calibrating, recording, or making a custom gesture
+                keyboard.Update(keyboardInput, capWidth, capHeight); // null while calibrating, recording, or making a custom gesture
                 string keys = !keyboard.Enabled ? "KEYS:OFF"
                     : keyboard.IsResting ? "KEYS:REST (fist)"
                     : keyboard.HeldKeys.Count == 0 ? "KEYS:-"
