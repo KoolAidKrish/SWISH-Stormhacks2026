@@ -618,7 +618,8 @@ public sealed class GestureEngine : IDisposable
         }
         finally
         {
-            _mouse?.Release();        // let go of the mouse button first
+            _mouse?.Dispose();        // let go of the mouse button and stop the output thread
+            _mouse = null;
             _calibrator?.Dispose();   // close the calibration window before DestroyAllWindows
             _calibrator = null;
             image?.Dispose();
@@ -632,7 +633,7 @@ public sealed class GestureEngine : IDisposable
     private void StartCalibration()
     {
         if (_calibrator is not null) return;
-        _mouse?.Release();
+        _mouse?.Dispose();   // stops its output thread too
         _mouse = null;
         if (_showWindow)
         {
@@ -644,10 +645,11 @@ public sealed class GestureEngine : IDisposable
     /// <summary>All mouse tuning lives here; used at startup and after every calibration.</summary>
     private static HandMouse CreateMouse(CalibrationData calib) =>
         new HandMouse(calib,
-            sensitivity: 0.5,      // cursor speed (try 1.0 - 3.0)
-            acceleration: 0,  // extra speed for fast flicks (0 = off)
-            minCutoff: 0.4,        // smoothing at rest (lower = steadier, laggier)
-            deadzonePx: 6);        // wobble ignored while holding still
+            sensitivity: 1,      // cursor speed (try 1.0 - 3.0)
+            acceleration: 0.0005,  // extra speed for fast flicks (0 = off)
+            minCutoff: 0.25,       // smoothing at rest (lower = steadier, laggier)
+            deadzonePx: 8,         // wobble ignored while holding still
+            glideSeconds: 0.03);   // glide between camera frames (higher = silkier, laggier)
 
     // Global hotkeys #########################################################
     [System.Runtime.InteropServices.DllImport("user32.dll")]
