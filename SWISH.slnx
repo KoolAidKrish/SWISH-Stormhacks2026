@@ -1,5 +1,7 @@
 <Solution>
-  <Project Path="HandGestureRecognition/HandGestureRecognition.csproj" />
-  <Project Path="SWISH.App/SWISH.App.csproj" />
-  <Project Path="VoiceKeys/VoiceKeys.csproj" />
+  <Folder Name="/src/">
+    <Project Path="src/HandGestureRecognition/HandGestureRecognition.csproj" />
+    <Project Path="src/SWISH.App/SWISH.App.csproj" />
+    <Project Path="src/VoiceKeys/VoiceKeys.csproj" />
+  </Folder>
 </Solution>

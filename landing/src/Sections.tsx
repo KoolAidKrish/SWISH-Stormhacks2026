@@ -132,7 +132,7 @@ export function Presets() {
             <h3>Your game</h3>
             <span className="preset-say">say "… mode"</span>
           </header>
-          <p>Copy a preset, change the phrases and keys, and drop it in <code>VoiceKeys/presets/</code>; it answers to its own switch phrase. Or skip the JSON: the in-app command editor adds voice or gesture commands that work in every game.</p>
+          <p>Copy a preset, change the phrases and keys, and drop it in <code>src/VoiceKeys/presets/</code>; it answers to its own switch phrase. Or skip the JSON: the in-app command editor adds voice or gesture commands that work in every game.</p>
           <pre>{`{ "say": [ "reload" ],
   "keys": [ "r" ] }`}</pre>
         </article>
@@ -227,7 +227,7 @@ export function Story() {
 export function GetStarted() {
   const steps = [
     { n: '01', t: 'Get an ElevenLabs key', b: <>Set it once in PowerShell: <code>setx ELEVENLABS_API_KEY "your-key"</code>. Without it, the hands still work.</> },
-    { n: '02', t: 'Run SWISH', b: <>Clone the repo and run <code>.\run.ps1</code>, or open <code>SWISH.slnx</code> in Visual Studio and start <b>SWISH.App</b>.</> },
+    { n: '02', t: 'Run SWISH', b: <><a href={links.download || `${links.github}/releases`} target="_blank" rel="noreferrer">Download the latest release</a>, unzip it and run <code>SWISH.exe</code>. Or build it yourself: clone the repo and run <code>.\scripts\run.ps1</code>.</> },
     { n: '03', t: 'Calibrate and play', b: <>On first launch, click <b>Start calibrating</b> (or say "start") and trace the moving ball with your palm. Then pick a game on the Controls screen, or just say "rocket league mode".</> },
   ]
   return (

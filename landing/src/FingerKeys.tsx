@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-// Mirrors HandGestureRecognition/HandKeyboard.cs: fold a finger to hold its key,
+// Mirrors src/HandGestureRecognition/HandKeyboard.cs: fold a finger to hold its key,
 // a fist (4+ fingers down) is the rest pose, and every key lets go when the hand leaves view.
 const FINGERS = [
   { name: 'Thumb', key: 'Space', code: 'Space', joints: [1, 2, 3, 4] },

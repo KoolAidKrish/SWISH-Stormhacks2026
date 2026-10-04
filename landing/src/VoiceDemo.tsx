@@ -10,7 +10,7 @@ type Cmd = {
   release?: boolean
 }
 
-// Durations come straight from VoiceKeys/presets/rocket-league.json:
+// Durations come straight from src/VoiceKeys/presets/rocket-league.json:
 // left = 350 ms; "hard" ×2.2; "little" ×0.35; "really" raises the next scale to the 1.7th power.
 const hard = 2.2
 const little = 0.35

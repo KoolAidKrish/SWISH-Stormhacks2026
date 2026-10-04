@@ -3,62 +3,37 @@
 Serial Wireless Interactive System (for) Humans: you become the game controller. Your hand drives
 the mouse through the webcam, and your voice presses the keys.
 
-| Project | What it does |
-|---|---|
-| [`SWISH.App/`](SWISH.App/) | **The app.** One styled window + tray icon running both engines below. |
-| [`HandGestureRecognition/`](HandGestureRecognition/README.md) | Webcam hand tracking → mouse and keys. Palm moves the cursor, pinches click and scroll, fist "lifts" the mouse. Still runs on its own as a console app. |
-| [`VoiceKeys/`](VoiceKeys/) | Voice → keystrokes, using ElevenLabs realtime speech-to-text and text-to-speech. One preset per game (Desktop, Minecraft, Aimlabs, Rocket League, Bloons TD 6). Still runs on its own as a console app. |
+## Download
 
-## Running it
+Grab **`SWISH-win-x64.zip`** from the [latest release](https://github.com/KoolAidKrish/SWISH-Stormhacks2026/releases/latest),
+unzip it and run `SWISH.exe`. It's a single self-contained exe (Windows 10/11, 64-bit, no .NET install needed).
+The [quickstart](docs/QUICKSTART.md) in the zip covers the API key, calibration and controls.
 
-```powershell
-setx ELEVENLABS_API_KEY "your-key"     # once
-.\run.ps1
+## Repository layout
+
+```
+SWISH-Stormhacks2026/
+├─ README.md              you are here
+├─ SWISH.slnx             the Visual Studio solution (the three projects in src/)
+├─ src/
+│  ├─ SWISH.App/          the app: WPF window + tray icon running both engines below
+│  ├─ HandGestureRecognition/   webcam hand tracking → mouse and keys (also runs alone as a console app)
+│  └─ VoiceKeys/          voice → keystrokes via ElevenLabs, one preset per game (also runs alone)
+├─ docs/
+│  ├─ QUICKSTART.md       for people running the exe (ships inside the release zip)
+│  └─ USER-GUIDE.md       everything the app does, in detail
+├─ scripts/
+│  ├─ run.ps1             build from source and start the app
+│  └─ publish.ps1         build the single-file exe + zip into release/
+├─ landing/               the project website (Vite + React, deployed by Netlify; see netlify.toml)
+└─ release/               output of scripts/publish.ps1 (git-ignored)
 ```
 
-Or open `SWISH.slnx` in Visual Studio, set **SWISH.App** as the startup project and press F5.
-
-It opens with an animated title card (~4 s; click or press a key to skip, or start with `--no-splash`).
-`SWISH.exe --render-splash <folder>` writes its frames to PNGs without starting the camera or mic.
-Closing the window keeps SWISH running in the tray (double-click to bring it back; right-click for
-hand mouse, voice, preset, recalibrate, exit).
-
-## The app
-
-**First run** goes Home → *How to calibrate* (a looping demo clip) → a 3-2-1 countdown → calibration:
-a ball snakes across the screen row by row for ~30 s and you follow it with your palm (the X's turn pink
-as it passes them). Say "start" or click to begin, "cancel" or Esc to back out. The mapping is fitted
-from hundreds of samples, corrected for how far your hand trails the ball, and a bad run (hand lost too
-often, path not followed) is refused with a reason. It's saved to `%LOCALAPPDATA%\SWISH\calibration.json`,
-so later launches go straight to Controls; **Settings › Re-calibrate** redoes it.
-
-**Controls** shows, for the selected game, what each hand does and the voice commands (the essential ones
-up front, the rest by category). The sidebar has:
-
-- **My games**: Desktop, Minecraft, Aimlabs, Rocket League, Bloons TD 6. Picking one switches the voice
-  preset. **+ More** is a placeholder for adding your own.
-- **Live status**: hands in view, voice state, mic level and the last thing heard.
-- **Pause** turns the camera *and* the microphone off: nothing is recorded, transcribed or sent until you
-  resume. The small **✋** button next to it turns off only hand tracking (voice keeps working).
-- **Settings**: camera, microphone, GPU (run hand tracking on any DirectX 12 GPU via DirectML, or the CPU),
-  voice assistant (the spoken replies: voice, volume, mute, test), and Advanced › debug dashboard.
-
-### Hand controls
-
-| Hand | Gesture | Does |
-|---|---|---|
-| Right | move your palm | moves the cursor |
-| Right | thumb + index pinch | left click (hold to drag) |
-| Right | thumb + middle pinch | right click |
-| Right | thumb + ring pinch, then move | **scroll**: the cursor stays put; hand up/down scrolls up/down, left/right scrolls sideways |
-| Right | fist | "lift the mouse" to reposition your hand |
-| Left | fold a finger | holds a key: middle W, ring A, index D, thumb Space, pinky S |
-
-Each game labels these on its Controls page (e.g. in Minecraft the scroll pinch changes hotbar slot).
-
-**Ctrl+Alt+M** hand mouse on/off · **Ctrl+Alt+J** mouse mode · **Ctrl+Alt+V** show/hide window · **Ctrl+Alt+Q** quit.
-
-### How it fits together
+| Project | What it does |
+|---|---|
+| [`src/SWISH.App/`](src/SWISH.App/) | **The app.** One styled window + tray icon running both engines below. |
+| [`src/HandGestureRecognition/`](src/HandGestureRecognition/README.md) | Webcam hand tracking → mouse and keys. Palm moves the cursor, pinches click and scroll, fist "lifts" the mouse. Still runs on its own as a console app. |
+| [`src/VoiceKeys/`](src/VoiceKeys/) | Voice → keystrokes, using ElevenLabs realtime speech-to-text and text-to-speech. One preset per game (Desktop, Minecraft, Aimlabs, Rocket League, Bloons TD 6). Still runs on its own as a console app. |
 
 ```
 SWISH.App (WPF, tray)
@@ -66,85 +41,33 @@ SWISH.App (WPF, tray)
 └─ VoiceEngine    (VoiceKeys)               mic → ElevenLabs STT → presets → keystrokes          [async]
 ```
 
-Each engine is a class the console programs also use (`HandGestureRecognition/Program.cs` and
-`VoiceKeys/Program.cs` are thin wrappers), so they can still be run and debugged separately
-(`.\run.ps1 -Console`). If one engine can't start (no camera, no API key), the other keeps working.
-The console gesture app keeps its own calibrations: `c` (hold still on 9 targets) and `p` (follow the dot).
+## Building from source
 
-## Custom gestures & commands
+Needs the [.NET 10 SDK](https://dotnet.microsoft.com/download) on Windows.
 
-**CUSTOMIZE +** on Controls (or any **+ Add** card) opens the command editor, in three steps:
+```powershell
+setx ELEVENLABS_API_KEY "your-key"     # once
+.\scripts\run.ps1                      # build and start the app
+.\scripts\run.ps1 -Console             # or the two console programs side by side
+```
 
-1. **How do you trigger it?** *Say a phrase*, *make a gesture*, or both. Phrases are added as chips, and you
-   can say one out loud to check it's heard (voice commands are paused on this page, so nothing gets pressed).
-   A gesture is recorded with a guided ~20 s routine (tilt it, move it around) so it's recognised from
-   different angles, for the left, right or either hand; it can run once or hold its keys while held.
-2. **What should it do?** A list of steps: *Press* a key (click the box, then press the key, chord or
-   mouse button), *Hold* one for some milliseconds, *Wait*, or *Type* text. Drag the dotted grip to reorder
-   (or focus it and press Up/Down). *Edit as text* shows the step language for power users
-   (`ctrl+c`, `hold w 500`, `wait 100`, `latch shift`, `type Hello`).
-3. **Name it**, and optionally pick a category so it appears in that group on Controls.
+Or open `SWISH.slnx` in Visual Studio, set **SWISH.App** as the startup project and press F5.
 
-A summary says in plain words what the command will do, and the camera on the right shows whether your
-saved gestures are recognised. Recognition compares your hand with the recorded samples (no retraining):
-positions are relative to the wrist and palm size, and finger extension is weighted so similar poses stay
-apart. While a custom gesture is active, that hand's mouse and finger keys pause.
-Saved to `%LOCALAPPDATA%\SWISH\custom-functions.json`.
+It opens with an animated title card (~4 s; click or press a key to skip, or start with `--no-splash`).
+`SWISH.exe --render-splash <folder>` writes its frames to PNGs without starting the camera or mic.
 
-## Voice
+### Making a release
 
-Listening is continuous: say a command and it fires once you pause (~0.3 s). Push-to-talk is still
-available (`pushToTalk.enabled` in `VoiceKeys/settings.json`).
+```powershell
+.\scripts\publish.ps1
+```
 
-Voice can also control the hand tracking, in every preset (it presses the same hotkeys you would):
+This writes `release\SWISH\` (`SWISH.exe` + the quickstart as `README.md`) and `release\SWISH-win-x64.zip`.
+Upload the zip to a GitHub Release rather than committing it: the exe is ~135 MB, over GitHub's 100 MB file limit.
+Visual Studio's **Publish** (profile `FolderProfile`) produces the same exe in `release\SWISH\`.
 
-| Say | Does |
-|---|---|
-| "toggle hand mouse" / "gestures" | turn hand-mouse on/off (Ctrl+Alt+M) |
-| "mouse mode" | Relative → Absolute → Joystick (Ctrl+Alt+J) |
-| "show camera" / "hide camera" | show/hide the SWISH window (Ctrl+Alt+V) |
+## Learn more
 
-Switch games by voice ("minecraft mode", "desktop mode"…) or in the sidebar.
-
-### Desktop
-
-Everyday Windows: "enter", "escape", "switch window", "show desktop", "screenshot", "new tab",
-"go back", "page down", "volume up", "play"… plus the scroll pinch. See
-[`VoiceKeys/presets/desktop.json`](VoiceKeys/presets/desktop.json).
-
-### Minecraft
-
-Your hand aims the camera (hand-mouse in Relative mode), voice does everything else: "walk", "run",
-"stop", "a little forward", "sneak", "mine", "really long mine", "keep mining", "place", "eat",
-"shoot", "slot three", "inventory", "drop"… See
-[`VoiceKeys/presets/minecraft.json`](VoiceKeys/presets/minecraft.json).
-
-### Rocket League
-
-Your hand keeps the mouse, voice drives the car: "drive", "stop", "reverse", "left", "hard left",
-"left a little", "boost", "little boost", "jump", "big jump", "flip left", "backflip"… Modifiers
-("hard", "little", "really") scale how long a key is held. See
-[`VoiceKeys/presets/rocket-league.json`](VoiceKeys/presets/rocket-league.json).
-
-**Heads-up:** a pinch is a left click, and boost/mine are also the left mouse button, so a pinch
-while voice-boosting ends the boost early (and vice versa). Turn hand-mouse off ("toggle hand
-mouse") or rebind if that gets in the way.
-
-### Aimlabs and Bloons TD 6
-
-Aimlabs: "shoot", "hold fire", "scope", "reload", "jump", "crouch"… (keybinds are the defaults we could find;
-check [`aimlabs.json`](VoiceKeys/presets/aimlabs.json) against your settings). Bloons TD 6: say a tower's name
-to pick it ("dart monkey", "ninja monkey"…), "upgrade one/two/three", "sell", "target", "start", "pause"… See
-[`bloons-td-6.json`](VoiceKeys/presets/bloons-td-6.json).
-
-## VoiceKeys config
-
-- `VoiceKeys/settings.json`: push-to-talk, latency, spoken replies (voice, volume), starting preset.
-  The app's own choices (camera, mic, GPU, voice assistant, last game) are kept in
-  `%LOCALAPPDATA%\SWISH\app-settings.json`.
-- `VoiceKeys/presets/*.json`: one file per game. `game` makes it a card in *My games*, `handLabels` names
-  the hand controls, and each command can have a `label`, `category` and `essential` flag for the Controls
-  page. `gestures.json` is shared via `"include"`. Edit them in the source folder; building copies them next
-  to the app (tray → *Open presets folder* shows the copy in use).
-- `dotnet run --project VoiceKeys -- --try "hard left"` shows what a phrase would do (no mic, no keys).
-- `dotnet run --project VoiceKeys -- --selftest "drive"` runs the phrase through ElevenLabs TTS → STT.
+- [User guide](docs/USER-GUIDE.md): first run and calibration, the Controls page, hand controls, custom gestures
+  and commands, every game's voice commands, and the VoiceKeys config files.
+- [Landing site](landing/README.md)

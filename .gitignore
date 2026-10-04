@@ -1,11 +1,12 @@
-output.mp4
-# Build output and IDE state
-VoiceKeys/bin/
-VoiceKeys/obj/
-SWISH.App/bin/
-SWISH.App/obj/
-# Arron's project has older build output committed; this stops new build files being added
-HandGestureRecognition/bin/
-HandGestureRecognition/obj/
+# Build output (any project under src/)
+bin/
+obj/
+# Release builds made by scripts/publish.ps1 (attach the zip to a GitHub Release instead of committing it: the exe is >100 MB)
+release/
+
+# IDE / per-user state
 .vs/
 *.user
+
+# Local recordings from the console gesture app
+output.mp4
