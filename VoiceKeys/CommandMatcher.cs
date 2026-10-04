@@ -42,14 +42,18 @@ public sealed class CommandMatcher
     private readonly HashSet<string> _fillers;
     private readonly HashSet<string> _dictationPrefixes;
 
-    public CommandMatcher(AppConfig cfg, Preset preset)
+    private readonly IReadOnlyList<CommandDef> _extra;
+
+    /// <param name="extra">Commands that apply on top of the preset (the user's custom voice functions).</param>
+    public CommandMatcher(AppConfig cfg, Preset preset, IReadOnlyList<CommandDef>? extra = null)
     {
         _cfg = cfg;
         _preset = preset;
         _fillers = cfg.FillerWords.Select(Normalize).ToHashSet();
         _dictationPrefixes = cfg.DictationPrefixes.Select(Normalize).ToHashSet();
 
-        var commandPhrases = preset.Commands
+        _extra = extra ?? [];
+        var commandPhrases = preset.Commands.Concat(_extra)
             .SelectMany(c => c.Say.Select(p => (Words: Tokenize(p), Cmd: (CommandDef?)c)))
             .Where(p => p.Words.Length > 0)
             .ToList();
@@ -82,6 +86,7 @@ public sealed class CommandMatcher
     /// </summary>
     public IEnumerable<string> AllPhrases =>
         ControlPhrases.Concat(_cfg.DictationPrefixes)
+            .Concat(_extra.SelectMany(c => c.Say))
             .Concat(_preset.Commands.SelectMany(c => c.Say))
             .Concat(_preset.Modifiers.SelectMany(m => m.Say));
 

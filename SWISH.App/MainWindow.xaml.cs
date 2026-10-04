@@ -57,18 +57,28 @@ public partial class MainWindow : Window
             Add("Voice is off", app.VoiceProblem, ErrorBrush);
         }
         app.Gestures.Log += msg => Dispatcher.BeginInvoke(() => Add($"✋ {msg}", null, HandBrush));
+        app.CustomFunctions.Fired += (name, hand, started) => Dispatcher.BeginInvoke(() =>
+        {
+            if (started) Add($"✋ {name}", $"custom gesture, {hand.ToString().ToLowerInvariant()} hand", CommandBrush);
+        });
         UpdateVoiceState();
 
-        // 30 Hz: copy the newest camera frame in; refresh the status lines every few ticks.
-        _timer = new DispatcherTimer(TimeSpan.FromMilliseconds(33), DispatcherPriority.Render, (_, _) => OnTick(), Dispatcher);
+        // 15 Hz: copy the newest camera frame in; refresh the status lines every few ticks. A debug
+        // preview doesn't need the camera's full 30 fps, and redrawing it was ~12% of a core.
+        // The timer only runs while the window can be seen.
+        _timer = new DispatcherTimer(TimeSpan.FromMilliseconds(66), DispatcherPriority.Render, (_, _) => OnTick(), Dispatcher);
         IsVisibleChanged += (_, _) => UpdatePreviewFlag();
         StateChanged += (_, _) => UpdatePreviewFlag();
-        Loaded += (_, _) => { _timer.Start(); UpdatePreviewFlag(); };
+        Loaded += (_, _) => UpdatePreviewFlag();
     }
 
     /// <summary>Drawing preview frames costs a copy per frame, so only do it while they can be seen.</summary>
-    void UpdatePreviewFlag() =>
-        _app.Gestures.PreviewEnabled = IsVisible && WindowState != WindowState.Minimized;
+    internal void UpdatePreviewFlag()
+    {
+        bool seen = IsVisible && WindowState != WindowState.Minimized;
+        _app.Gestures.PreviewEnabled = seen || _app.PreviewClaimed;
+        if (seen) _timer.Start(); else _timer.Stop();
+    }
 
     protected override void OnClosing(CancelEventArgs e)
     {
@@ -92,6 +102,7 @@ public partial class MainWindow : Window
     void OnCycleMouseMode(object sender, RoutedEventArgs e) => _app.Gestures.CycleMouseMode();
     void OnRecalibrate(object sender, RoutedEventArgs e) => _app.Gestures.Recalibrate(CalibrationKind.Points);
     void OnRecalibratePursuit(object sender, RoutedEventArgs e) => _app.Gestures.Recalibrate(CalibrationKind.Pursuit);
+    void OnCustomFunctions(object sender, RoutedEventArgs e) => _app.ShowCustomFunctions();
 
     void OnToggleVoice(object sender, RoutedEventArgs e)
     {
@@ -108,8 +119,9 @@ public partial class MainWindow : Window
 
     void OnTick()
     {
-        if (_app.Gestures.PreviewEnabled) BlitPreview();
-        if (++_tick % 5 == 0) UpdateGestureState(); // ~6 Hz is plenty for text
+        // Another window (custom functions, recorder) takes the preview frames while it's open.
+        if (_app.Gestures.PreviewEnabled && _app.OwnsPreview(this)) BlitPreview();
+        if (++_tick % 3 == 0) UpdateGestureState(); // ~5 Hz is plenty for text
     }
 
     void BlitPreview()
@@ -138,6 +150,7 @@ public partial class MainWindow : Window
             : !s.Running ? ("Starting…", InfoBrush)
             : s.Calibrating ? ("Calibrating: follow the instructions on screen", EarlyBrush)
             : !s.MouseEnabled ? ("Hand mouse off", IgnoredBrush)
+            : s.Idle ? ("Idle: no hand in view", IgnoredBrush)
             : s.Pinching ? ("Click", CommandBrush)
             : s.Clutched ? ("Lifted (fist)", EarlyBrush)
             : (s.Hands > 0 ? "Tracking" : "No hand", s.Hands > 0 ? CommandBrush : IgnoredBrush);

@@ -47,7 +47,8 @@
             <Button x:Name="HandMouseButton" Content="Hand mouse" Click="OnToggleHandMouse" />
             <Button x:Name="MouseModeButton" Content="Mode" Click="OnCycleMouseMode" />
             <Button Content="Recalibrate…" Click="OnRecalibrate" ToolTip="Hold your hand still on 9 targets" />
-            <Button Content="Follow the dot…" Click="OnRecalibratePursuit" ToolTip="Calibrate by following a moving dot for ~20 s" />
+            <Button Content="Follow the dot…" Click="OnRecalibratePursuit" ToolTip="Calibrate by following a moving dot for ~30 s" />
+            <Button Content="Custom gestures…" Click="OnCustomFunctions" ToolTip="Record your own gestures and voice commands, and choose what they do" />
             <TextBlock x:Name="GestureBanner" VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold" />
         </DockPanel>
 

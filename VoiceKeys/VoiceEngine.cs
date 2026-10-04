@@ -27,6 +27,7 @@ public sealed class VoiceEngine : IAsyncDisposable
     private Preset _preset;
     private CommandMatcher _matcher;
     private bool _paused;
+    private IReadOnlyList<CommandDef> _custom = [];
     // How many commands of the utterance in progress already fired from partial transcripts,
     // so the final committed transcript doesn't press them a second time.
     private int _firedEarly;
@@ -85,13 +86,29 @@ public sealed class VoiceEngine : IAsyncDisposable
             if (next == _preset) return;
             KeySender.ReleaseLatchedKeys(); // don't carry "drive" into the desktop
             _preset = next;
-            _matcher = new CommandMatcher(_cfg, next);
+            _matcher = new CommandMatcher(_cfg, next, _custom);
             _firedEarly = 0;
             KeySender.DefaultHoldMs = next.KeyHoldMs ?? _cfg.KeyHoldMs;
         }
         Say(next.AnnounceLine);
         Emit(VoiceLogKind.Preset, next.Name, $"{next.Commands.Count} commands");
         _session?.Cancel(); // reconnect so the recognizer is biased toward the new preset's words
+        StateChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// The user's custom voice functions, active in every preset on top of its own commands. Reconnects
+    /// so the recognizer is hinted toward the new phrases.
+    /// </summary>
+    public void SetCustomCommands(IReadOnlyList<CommandDef> commands)
+    {
+        lock (_gate)
+        {
+            _custom = commands;
+            _matcher = new CommandMatcher(_cfg, _preset, _custom);
+            _firedEarly = 0;
+        }
+        _session?.Cancel();
         StateChanged?.Invoke();
     }
 

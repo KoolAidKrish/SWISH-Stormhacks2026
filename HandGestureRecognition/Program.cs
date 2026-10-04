@@ -13,7 +13,8 @@ internal sealed record AppArgs(
     bool DisableImageFlip,
     bool Calibrate,
     bool CalibratePursuit,
-    bool ShowWindow)
+    bool ShowWindow,
+    bool Record)
 {
     public static AppArgs Parse(string[] argv)
     {
@@ -26,6 +27,7 @@ internal sealed record AppArgs(
         bool calibrate = false;
         bool calibratePursuit = false;
         bool showWindow = false;
+        bool record = false;
 
         for (int i = 0; i < argv.Length; i++)
         {
@@ -47,6 +49,10 @@ internal sealed record AppArgs(
                 case "-sw":
                 case "--show_window":
                     showWindow = true;
+                    break;
+                case "-rec":
+                case "--record":
+                    record = true;
                     break;
                 case "-cal":
                 case "--calibrate":
@@ -86,7 +92,7 @@ internal sealed record AppArgs(
             }
         }
 
-        return new AppArgs(device, image, width, height, minDetectionConfidence, disableImageFlip, calibrate, calibratePursuit, showWindow);
+        return new AppArgs(device, image, width, height, minDetectionConfidence, disableImageFlip, calibrate, calibratePursuit, showWindow, record);
     }
 }
 
@@ -125,6 +131,8 @@ internal static class Program
             CalibrationKind = args.CalibratePursuit ? CalibrationKind.Pursuit : CalibrationKind.Points,
             ShowWindow = args.ShowWindow,
             UseOpenCvWindow = true,
+            // Recording the annotated feed is opt-in: it re-encodes every frame and writes ~9 MB/min.
+            RecordPath = args.Record ? "output.mp4" : null,
             // Relative to the working directory, as before: model/, calibration.json, output.mp4
         });
         engine.Log += Console.WriteLine;

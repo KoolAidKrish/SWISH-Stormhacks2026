@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using HandGestureRecognition.Model;
+using HandGestureRecognition.Custom;
 using HandGestureRecognition.Mouse;
 using HandGestureRecognition.Utils;
 using OpenCvSharp;
@@ -31,13 +32,27 @@ public sealed class GestureOptions
     public string ModelDir { get; init; } = "model";
     public string CalibrationPath { get; init; } = "calibration.json";
     /// <summary>Records the annotated feed here; null = don't record.</summary>
-    public string? RecordPath { get; init; } = "output.mp4";
+    public string? RecordPath { get; init; }
+    /// <summary>
+    /// After this long with no hand in view, the hand models only run on every <see cref="IdleFrameInterval"/>-th
+    /// frame (~5 fps instead of ~30). Palm detection is about half a CPU core at full rate, and most of the time
+    /// nobody is in front of the camera. A hand that appears is picked up within ~0.2 s and full rate resumes.
+    /// </summary>
+    public double IdleAfterSeconds { get; init; } = 1.5;
+    public int IdleFrameInterval { get; init; } = 6;
 }
+
+/// <summary>
+/// The hands seen in one processed frame, for recording custom gestures and showing live matches.
+/// Right = the mouse hand, Left = the keyboard hand (mirrored camera picture).
+/// </summary>
+public sealed record HandsFrame(Point2f[]? Right, Point2f[]? Left,
+                                string? RightMatch, double RightConfidence, string? LeftMatch, double LeftConfidence);
 
 /// <summary>Read-only snapshot of the engine for a UI. Replaced every frame.</summary>
 public sealed record GestureStatus(
     bool Running, double Fps, int Hands, bool Calibrating,
-    bool MouseEnabled, MouseMode MouseMode, bool Pinching, bool Clutched, string? Error = null)
+    bool MouseEnabled, MouseMode MouseMode, bool Pinching, bool Clutched, string? Error = null, bool Idle = false)
 {
     public static readonly GestureStatus Stopped = new(false, 0, 0, false, false, MouseMode.Relative, false, false);
 }
@@ -80,10 +95,16 @@ public sealed class GestureEngine : IDisposable
     private bool _showWindow;
     private int _screenW, _screenH;
 
+    // Custom gestures
+    private IReadOnlyList<CustomGesture> _customGestures = [];
+    private readonly GestureTracker _gestureTracker = new();
+
     public GestureEngine(GestureOptions options)
     {
         _opt = options;
         _showWindow = options.UseOpenCvWindow && options.ShowWindow;
+        _gestureTracker.Started += (g, hand) => CustomGestureStarted?.Invoke(g, hand);
+        _gestureTracker.Ended += (g, hand) => CustomGestureEnded?.Invoke(g, hand);
     }
 
     /// <summary>Latest status; safe to read from any thread.</summary>
@@ -100,6 +121,25 @@ public sealed class GestureEngine : IDisposable
     public event Action? QuitRequested;
     /// <summary>The loop died with an exception (camera unplugged, model missing...).</summary>
     public event Action<Exception>? Faulted;
+    /// <summary>Every processed frame (loop thread): the visible hands and their live custom-gesture matches.</summary>
+    public event Action<HandsFrame>? HandsUpdated;
+    /// <summary>A custom gesture was held steadily on a hand (loop thread).</summary>
+    public event Action<CustomGesture, GestureHand>? CustomGestureStarted;
+    /// <summary>That gesture was released (loop thread).</summary>
+    public event Action<CustomGesture, GestureHand>? CustomGestureEnded;
+
+    /// <summary>
+    /// While true (recording a custom gesture), the hands don't drive the mouse, the finger keyboard or
+    /// custom gestures, so posing for the recording doesn't click or type anything.
+    /// </summary>
+    public bool Recording { get; set; }
+
+    /// <summary>Replaces the custom gestures to recognise (thread-safe; active ones end first).</summary>
+    public void SetCustomGestures(IReadOnlyList<CustomGesture> gestures) => Post(() =>
+    {
+        _gestureTracker.Reset();
+        _customGestures = gestures;
+    });
 
     /// <summary>Takes the newest annotated frame (BGR), or null if none since last time. Caller disposes it.</summary>
     public Mat? TakePreview() => Interlocked.Exchange(ref _preview, null);
@@ -197,6 +237,8 @@ public sealed class GestureEngine : IDisposable
             : null;
         _mouse = _calibrator is null ? CreateMouse(calib!) : null;
         var mouseClock = Stopwatch.StartNew();
+        double lastHandSeen = 0;   // for the idle throttle (seconds on mouseClock)
+        long frameIndex = 0;
 
         // Keyboard control (left hand) ##########################################
         var keyboard = new HandKeyboard();
@@ -309,6 +351,15 @@ public sealed class GestureEngine : IDisposable
                 {
                     break;
                 }
+                // Idle throttle: nobody in view for a while -> run the models on only every Nth frame.
+                // The camera is still read every frame so the picture never goes stale. Never while
+                // calibrating (the calibration screen needs every frame).
+                bool idle = _calibrator is null && mouseClock.Elapsed.TotalSeconds - lastHandSeen > _opt.IdleAfterSeconds;
+                if (idle && frameIndex++ % _opt.IdleFrameInterval != 0)
+                {
+                    continue;
+                }
+
                 if (!_opt.DisableImageFlip)
                 {
                     Cv2.Flip(image, image, FlipMode.Y); // mirror display
@@ -321,6 +372,14 @@ public sealed class GestureEngine : IDisposable
 
                 // ===================================================== PalmDetection
                 var hands = palmDetection.Run(image);
+                if (hands.Count > 0)
+                {
+                    lastHandSeen = mouseClock.Elapsed.TotalSeconds;
+                }
+                else if (idle)
+                {
+                    PutOutlinedText(debugImage, "IDLE: no hand, checking 5x/s", new Point(10, 235), 0.6);
+                }
 
                 var rects = new List<RotRect>();
                 var notRotateRects = new List<(int Rcx, int Rcy, int X1, int Y1, int X2, int Y2)>();
@@ -596,6 +655,28 @@ public sealed class GestureEngine : IDisposable
                 DrawPointHistory(debugImage, pointHistory);
                 DrawInfo(debugImage, fps, mode, number, auto);
 
+                // Custom gestures ###############################################
+                // Recognised before the mouse/keyboard run, so a hand making a custom gesture can be held
+                // back from them: otherwise a peace sign would also fold "keyboard" fingers or pinch-click.
+                var mouseInput = mouseLandmarks;
+                var keyboardInput = keyboardLandmarks;
+                if (Recording || _calibrator is not null)
+                {
+                    _gestureTracker.Update([], null, null); // ends anything active
+                    mouseInput = keyboardInput = null;
+                    HandsUpdated?.Invoke(new HandsFrame(mouseLandmarks, keyboardLandmarks, null, 0, null, 0));
+                }
+                else
+                {
+                    var live = _gestureTracker.Update(_customGestures, mouseLandmarks, keyboardLandmarks);
+                    if (_gestureTracker.ActiveRight is not null) mouseInput = null;
+                    if (_gestureTracker.ActiveLeft is not null) keyboardInput = null;
+                    HandsUpdated?.Invoke(new HandsFrame(mouseLandmarks, keyboardLandmarks,
+                        live.Right?.Name, live.RightConfidence, live.Left?.Name, live.LeftConfidence));
+                    if (_gestureTracker.ActiveRight is { } r) PutOutlinedText(debugImage, $"GESTURE: {r.Name}", new Point(10, 260), 0.7);
+                    if (_gestureTracker.ActiveLeft is { } l) PutOutlinedText(debugImage, $"GESTURE (left): {l.Name}", new Point(10, 285), 0.7);
+                }
+
                 // Mouse control #################################################
                 double now = mouseClock.Elapsed.TotalSeconds;
                 if (_calibrator is not null)
@@ -617,7 +698,7 @@ public sealed class GestureEngine : IDisposable
                 }
                 else if (_mouse is not null)
                 {
-                    _mouse.Update(mouseLandmarks, now);
+                    _mouse.Update(mouseInput, now);
                     string status = !_mouse.Enabled ? "MOUSE:OFF"
                         : _mouse.IsPinching && _mouse.IsRightPinching ? "MOUSE:LEFT+RIGHT"
                         : _mouse.IsPinching ? "MOUSE:LEFT CLICK"
@@ -628,7 +709,7 @@ public sealed class GestureEngine : IDisposable
                 }
 
                 // Keyboard control ##############################################
-                keyboard.Update(_calibrator is null ? keyboardLandmarks : null); // paused while calibrating
+                keyboard.Update(keyboardInput); // null while calibrating, recording, or making a custom gesture
                 string keys = !keyboard.Enabled ? "KEYS:OFF"
                     : keyboard.IsResting ? "KEYS:REST (fist)"
                     : keyboard.HeldKeys.Count == 0 ? "KEYS:-"
@@ -654,11 +735,13 @@ public sealed class GestureEngine : IDisposable
                 Volatile.Write(ref _status, new GestureStatus(
                     Running: true, Fps: fps, Hands: hands.Count, Calibrating: _calibrator is not null,
                     MouseEnabled: _mouse?.Enabled ?? false, MouseMode: _mouse?.Mode ?? MouseMode.Relative,
-                    Pinching: _mouse?.IsPinching ?? false, Clutched: _mouse?.IsClutched ?? false));
+                    Pinching: _mouse?.IsPinching ?? false, Clutched: _mouse?.IsClutched ?? false,
+                    Idle: idle && hands.Count == 0));
             }
         }
         finally
         {
+            _gestureTracker.Reset();  // end any held custom gesture (its keys come back up)
             keyboard.Dispose();       // release any held keys
             _mouse?.Dispose();        // let go of the mouse button and stop the output thread
             _mouse = null;
