@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import Hero from './Hero'
 import VoiceDemo from './VoiceDemo'
 import FingerKeys from './FingerKeys'
-import { ElevenLabs, Faq, Gallery, GetStarted, Presets, Slot, Stats, Story, Team, VideoSection } from './Sections'
+import { ElevenLabs, Faq, Gallery, GetStarted, Presets, Slot, Stats, Story, VideoSection } from './Sections'
 import { links, thanks } from './content'
 
 const v = (o: Record<string, string | number>) => o as CSSProperties
@@ -117,7 +117,6 @@ function Nav() {
         <a href="#video">Demo</a>
         <a href="#how">How it works</a>
         <a href="#presets">Presets</a>
-        <a href="#team">Team</a>
         <a href={links.github} target="_blank" rel="noreferrer">GitHub ↗</a>
       </div>
       <a className="btn btn-solid nav-cta" href="#get">Get SWISH</a>
@@ -351,7 +350,6 @@ export default function App() {
         <Gallery />
         <Story />
         <GetStarted />
-        <Team />
         <Faq />
 
         <section className="cta">
@@ -382,7 +380,6 @@ export default function App() {
             <a href="#video">Demo</a>
             <a href="#presets">Presets</a>
             <a href="#get">Get it</a>
-            <a href="#team">Team</a>
             <a href="#faq">FAQ</a>
             <a href={links.github} target="_blank" rel="noreferrer">GitHub</a>
             {links.devpost && <a href={links.devpost} target="_blank" rel="noreferrer">Devpost</a>}

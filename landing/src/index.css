@@ -988,27 +988,6 @@ code { font-family: var(--mono); font-size: 0.88em; color: var(--accent); }
 .steps h4 { font-family: var(--display); font-weight: 700; font-size: 26px; line-height: 1.1; margin-bottom: 6px; }
 .steps p { color: var(--gray); font-size: 15px; }
 
-/* ---------- team ---------- */
-.team { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 20px; }
-.member { display: grid; justify-items: center; text-align: center; gap: 8px; padding: 28px 20px; background: var(--bg); border: 1px solid var(--line); transition: transform 0.3s var(--ease), border-color 0.3s; }
-.member:hover { transform: translateY(-4px); border-color: var(--accent); }
-.avatar {
-  width: 112px; height: 112px;
-  display: grid; place-items: center;
-  overflow: hidden;
-  background: var(--brand);
-  clip-path: polygon(22% 0, 100% 0, 100% 78%, 78% 100%, 0 100%, 0 22%);
-  margin-bottom: 8px;
-}
-.avatar img { width: 100%; height: 100%; object-fit: cover; }
-.avatar span { font-family: var(--display); font-weight: 800; font-size: 44px; color: #fff; }
-.member h3 { font-family: var(--display); font-weight: 700; font-size: 26px; line-height: 1.1; }
-.member-role { font-family: var(--mono); font-size: 13px; color: var(--accent); }
-.member a { font-family: var(--mono); font-size: 13px; color: var(--gray); }
-.member-empty .avatar { background: transparent; border: 2px dashed var(--accent); clip-path: none; }
-.member-empty .avatar span { color: var(--accent); }
-.member-empty .slot { width: 100%; }
-
 /* ---------- FAQ ---------- */
 .faq { max-width: 860px; border-top: 1px solid var(--line); }
 .faq-item { border-bottom: 1px solid var(--line); }

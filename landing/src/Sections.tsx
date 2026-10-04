@@ -1,5 +1,5 @@
 import { useState, type CSSProperties, type ReactNode } from 'react'
-import { SHOW_EMPTY_SLOTS, buildLog, demoVideo, gallery, links, stats, story, team } from './content'
+import { SHOW_EMPTY_SLOTS, buildLog, demoVideo, gallery, links, stats, story } from './content'
 
 const v = (o: Record<string, string | number>) => o as CSSProperties
 
@@ -269,36 +269,6 @@ export function GetStarted() {
   )
 }
 
-/* ---------- team ---------- */
-const initials = (n: string) => n.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase()
-
-export function Team() {
-  return (
-    <section id="team" className="section section-alt">
-      <Head eyebrow="the humans" title="Built by" accent="these people." />
-      <div className="team">
-        {team.map((m, i) =>
-          m.name ? (
-            <article className="member" key={i} data-reveal style={v({ '--delay': `${i * 80}ms` })}>
-              <div className="avatar">{m.photo ? <img src={m.photo} alt="" /> : <span>{initials(m.name)}</span>}</div>
-              <h3>{m.name}</h3>
-              {m.role && <p className="member-role">{m.role}</p>}
-              {m.link && <a href={m.link} target="_blank" rel="noreferrer">profile ↗</a>}
-            </article>
-          ) : (
-            SHOW_EMPTY_SLOTS && (
-              <article className="member member-empty" key={i} data-reveal style={v({ '--delay': `${i * 80}ms` })}>
-                <div className="avatar"><span>?</span></div>
-                <Slot field={`team[${i}]`} hint="name, role, link, photo" className="slot-line" />
-              </article>
-            )
-          ),
-        )}
-      </div>
-    </section>
-  )
-}
-
 /* ---------- FAQ ---------- */
 const FAQ = [
   { q: 'Does it work with any game?', a: 'Anything that takes keyboard and mouse clicks at least. Certain Anti-cheats like Vanguard by Riot Games do not allow for the type of information that is passed by these types of programs, but besides that, SWISH presses keys with hardware scan codes, which is what games read. A game without a preset still gets the hand mouse, the finger keyboard, Desktop mode, and any commands you add in the command editor.' },
@@ -313,7 +283,7 @@ const FAQ = [
 export function Faq() {
   const [open, setOpen] = useState(0)
   return (
-    <section id="faq" className="section">
+    <section id="faq" className="section section-alt">
       <Head eyebrow="faq" title="Questions," accent="answered." />
       <div className="faq" data-reveal>
         {FAQ.map((f, i) => (

@@ -15,7 +15,7 @@ export const links = {
 }
 
 export const demoVideo = {
-  youtubeId: '', // the part after watch?v= ... takes priority over mp4
+  youtubeId: 'YHbdlz6OTAY', // the part after watch?v= ... takes priority over mp4
   mp4: '', // or a file in public/, e.g. '/demo.mp4'
   poster: '', // optional still shown before the mp4 plays, e.g. '/demo-poster.jpg'
   caption: '', // one line under the video, e.g. 'Rocket League, no controller, first try.'
@@ -55,14 +55,6 @@ export const buildLog = [
   { when: '', title: 'Your own gestures', body: 'Record a pose once and SWISH recognises it from other angles and distances: landmarks are compared relative to the wrist and palm size, and a gesture fires after 4 steady frames.' },
   { when: '', title: 'A real app', body: 'A full redesign: guided ball-tracing calibration, a Controls screen for each game, a command editor, and Settings for camera, mic, GPU and voice.' },
   { when: '', title: '', body: '' },
-]
-
-// Your team. Add or remove entries. photo is optional ('/team/name.jpg'); initials are used without it.
-export const team = [
-  { name: '', role: '', link: '', photo: '' },
-  { name: '', role: '', link: '', photo: '' },
-  { name: '', role: '', link: '', photo: '' },
-  { name: '', role: '', link: '', photo: '' },
 ]
 
 // Thanks / credits line in the footer, e.g. 'Thanks to the StormHacks organizers and mentors.'
