@@ -570,7 +570,9 @@ internal static class Program
                 {
                     mouse.Update(mouseLandmarks, now);
                     string status = !mouse.Enabled ? "MOUSE:OFF"
-                        : mouse.IsPinching ? "MOUSE:CLICK"
+                        : mouse.IsPinching && mouse.IsRightPinching ? "MOUSE:LEFT+RIGHT"
+                        : mouse.IsPinching ? "MOUSE:LEFT CLICK"
+                        : mouse.IsRightPinching ? "MOUSE:RIGHT CLICK"
                         : mouse.IsClutched ? "MOUSE:LIFTED"
                         : $"MOUSE:{mouse.Mode.ToString().ToUpperInvariant()}";
                     PutOutlinedText(debugImage, status, new Point(10, 160), 0.6);
@@ -614,7 +616,7 @@ internal static class Program
     /// <summary>All mouse tuning lives here; used at startup and after every calibration.</summary>
     private static HandMouse CreateMouse(CalibrationData calib) =>
         new HandMouse(calib,
-            sensitivity: 1,      // cursor speed (try 1.0 - 3.0)
+            sensitivity: 1.5,      // cursor speed (try 1.0 - 3.0)
             acceleration: 0.0005,  // extra speed for fast flicks (0 = off)
             minCutoff: 0.25,       // smoothing at rest (lower = steadier, laggier)
             deadzonePx: 8,         // wobble ignored while holding still
