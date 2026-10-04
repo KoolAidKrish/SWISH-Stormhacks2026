@@ -38,6 +38,17 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // Dev aid: write the splash animation's frames to PNGs and exit (no camera, mic or tray).
+        //   SWISH.exe --render-splash <folder>
+        int render = Array.IndexOf(e.Args, "--render-splash");
+        if (render >= 0)
+        {
+            var folder = render + 1 < e.Args.Length ? e.Args[render + 1] : "splash-frames";
+            new SplashWindow().RenderFrames(folder, new[] { 0.0, 0.3, 0.6, 0.9, 1.2, 1.6, 2.4, 3.2, 3.5, 3.8 });
+            Shutdown();
+            return;
+        }
+
         _singleInstance = new Mutex(true, @"Local\SWISH.App", out bool isFirst);
         if (!isFirst)
         {
@@ -78,7 +89,17 @@ public partial class App : Application
 
         // The window subscribes to engine events, so it exists before they start.
         _window = new MainWindow(this);
-        _window.Show();
+        if (e.Args.Contains("--no-splash"))
+        {
+            _window.Show();
+        }
+        else
+        {
+            // The engines start loading behind the splash; the main window appears when it ends.
+            var splash = new SplashWindow();
+            splash.Finished += () => { if (!IsExiting) ShowWindow(); };
+            splash.Show();
+        }
 
         Gestures.Start();
         if (Voice is not null)

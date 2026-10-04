@@ -18,6 +18,9 @@ setx ELEVENLABS_API_KEY "your-key"     # once
 
 Or open `SWISH.slnx` in Visual Studio, set **SWISH.App** as the startup project and press F5.
 
+It opens with an animated title card (~4 s; click or press a key to skip, or start with `--no-splash`).
+`SWISH.exe --render-splash <folder>` writes its frames to PNGs without starting the camera or mic.
+
 The window shows the camera with hand tracking on the left, and voice on the right: connection,
 the active preset, a live transcript while you hold **Caps Lock**, and a log of everything heard
 and the keys it pressed. Closing the window keeps SWISH running in the tray (double-click to bring
