@@ -4,6 +4,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using HandGestureRecognition.Custom;
 using Swish.App.Controls;
+using Swish.App.Services;
 using VoiceKeys;
 
 namespace Swish.App.Views;
@@ -19,14 +20,9 @@ public partial class ControlsPage : UserControl, ISwishPage
     App? _app;
     ShellWindow? _shell;
 
-    // The finger keyboard (left hand) is fixed: each finger holds one key. Order matches the mockup.
-    static readonly (string Key, string Finger, string Asset)[] FingerKeys =
-    [
-        ("w", "MIDDLE FINGER", "finger-middle"), ("a", "RING FINGER", "finger-ring"), ("d", "INDEX FINGER", "finger-index"),
-        ("space", "THUMB", "finger-thumb"), ("s", "PINKY", "finger-pinky"),
-    ];
-
     public ControlsPage() => InitializeComponent();
+
+    public bool ShowsCameraCorner => true;
 
     public IInputElement? DefaultFocus => Sidebar.FocusTarget;
 
@@ -47,6 +43,8 @@ public partial class ControlsPage : UserControl, ISwishPage
         }
         Build(preset);
     }
+
+    void OnTutorial(object sender, RoutedEventArgs e) => _shell?.ShowOverlay(new TutorialPage());
 
     void OnCustomize(object sender, RoutedEventArgs e)
     {
@@ -71,16 +69,15 @@ public partial class ControlsPage : UserControl, ISwishPage
         var hand = new StackPanel();
         hand.Children.Add(SubLabel("✥  LEFT HAND " + Label("_left", "MOVEMENTS").ToUpperInvariant()));
         var moves = new WrapPanel();
-        foreach (var (key, finger, asset) in FingerKeys)
-            moves.Children.Add(GestureCard(asset, $"FOLD {finger}", Label(key, key.ToUpperInvariant()), $"{finger} ({key.ToUpperInvariant()})"));
+        foreach (var control in HandControl.All.Where(c => c.Hand == "LEFT")) moves.Children.Add(HandCard(control, preset, Label));
         hand.Children.Add(moves);
 
         hand.Children.Add(SubLabel("↗  RIGHT HAND " + Label("_right", "ACTIONS").ToUpperInvariant()));
         var actions = new WrapPanel();
-        actions.Children.Add(GestureCard("pinch-index", "PINCH THUMB + INDEX", Label("lmb", "Left click"), "LEFT CLICK"));
-        actions.Children.Add(GestureCard("pinch-middle", "PINCH THUMB + MIDDLE", Label("rmb", "Right click"), "RIGHT CLICK"));
-        actions.Children.Add(GestureCard("pinch-ring", "PINCH THUMB + RING", Label("scroll", "Scroll"), "MOVE HAND TO SCROLL"));
-        actions.Children.Add(GestureCard("fist", "MAKE A FIST", "Lift mouse", "PAUSES THE CURSOR"));
+        foreach (var control in HandControl.All.Where(c => c.Hand == "RIGHT")) actions.Children.Add(HandCard(control, preset, Label));
+        actions.Children.Add(GestureCard("fist", "MAKE A FIST", "Lift mouse", "PAUSES THE CURSOR",
+            onClick: () => SwishDialog.Inform(Window.GetWindow(this), "LIFT MOUSE",
+                "Making a fist lifts the mouse so you can move your hand back without moving the cursor. It can't be rebound, or there'd be no way to reposition your hand.")));
         hand.Children.Add(actions);
 
         var myGestures = _app!.CustomFunctions.Functions
@@ -100,7 +97,7 @@ public partial class ControlsPage : UserControl, ISwishPage
 
         voice.Children.Add(SubLabel("↗  ESSENTIALS"));
         var essentials = new WrapPanel();
-        foreach (var c in commands.Where(c => c.Essential)) essentials.Children.Add(VoiceCard(c.Say[0], c.DisplayLabel, c));
+        foreach (var c in commands.Where(c => c.Essential)) essentials.Children.Add(VoiceCard(c.Say[0], c.DisplayLabel, c, preset.Id));
         voice.Children.Add(essentials);
 
         // Every category, collapsed: all its commands plus "+ add" for a new one in that category.
@@ -113,7 +110,7 @@ public partial class ControlsPage : UserControl, ISwishPage
             var inCategory = commands.Where(c => (c.Category ?? "Other") == category).ToList();
             var mineHere = custom.Where(f => f.Category == category).ToList();
             var panel = new WrapPanel();
-            foreach (var c in inCategory) panel.Children.Add(VoiceCard(c.Say[0], c.DisplayLabel, c));
+            foreach (var c in inCategory) panel.Children.Add(VoiceCard(c.Say[0], c.DisplayLabel, c, preset.Id));
             foreach (var f in mineHere) panel.Children.Add(CustomCard(f, $"SAY \"{f.VoicePhrases[0].ToUpperInvariant()}\""));
             panel.Children.Add(AddCard(preset.Id, category, "ADD TO " + category.ToUpperInvariant()));
             voice.Children.Add(new Expander
@@ -151,14 +148,35 @@ public partial class ControlsPage : UserControl, ISwishPage
 
     TextBlock SubLabel(string text) => new() { Text = text, Style = (Style)FindResource("SubLabel") };
 
-    /// <summary>A hand-control card: gesture art (or a placeholder) + what it does in this game.</summary>
-    FrameworkElement GestureCard(string asset, string gesture, string label, string detail)
+    /// <summary>
+    /// A built-in hand control: what it does in this game (its preset label, or the key the user rebound it to).
+    /// Clicking it opens the rebind page for this game.
+    /// </summary>
+    FrameworkElement HandCard(HandControl control, Preset preset, Func<string, string, string> label)
+    {
+        var custom = _app!.HandBindings.Get(preset.Id, control.Id);
+        string defaultKey = control.DefaultChord is null ? "Scroll" : KeyCaptureBox.Pretty(control.DefaultChord);
+        string what = custom is not null ? KeyCaptureBox.Pretty(custom) : label(control.LabelKey, defaultKey);
+        string name = control.Gesture.Replace("FOLD ", "").Replace("PINCH ", "");
+        string detail = custom is not null ? $"{name} (YOURS)"
+                      : control.DefaultChord is null ? "MOVE HAND TO SCROLL"
+                      : control.Finger is not null ? $"{name} ({defaultKey})" : defaultKey.Replace("LMB", "LEFT CLICK").Replace("RMB", "RIGHT CLICK");
+        return GestureCard(control.Asset, control.Gesture, what, detail,
+            onClick: () => _shell?.Navigate(new BindGesturePage(control.Id, preset.Id)));
+    }
+
+    /// <summary>A hand-control card: gesture art (or a placeholder) + what it does; on hover the hand turns blue.</summary>
+    FrameworkElement GestureCard(string asset, string gesture, string label, string detail, Action onClick)
     {
         var art = new Grid { Height = 64 };
+        FrameworkElement? blue = null;
         if (MenuSidebar.LoadAsset($"Gestures/{asset}.png") is { } img)
         {
             art.Height = double.NaN;   // the art takes whatever the card leaves above its labels
             art.Children.Add(new Image { Source = img, Stretch = Stretch.Uniform, Margin = new Thickness(0, 0, 0, 4) });
+            // The same hand in blue (dark tones = the hover blue, light ones = white), faded in on hover.
+            blue = new Image { Source = img is BitmapSource bmp ? BlueDuotone(bmp) : img, Stretch = Stretch.Uniform, Margin = new Thickness(0, 0, 0, 4), Opacity = 0, IsHitTestVisible = false };
+            art.Children.Add(blue);
             RenderOptions.SetBitmapScalingMode(art, BitmapScalingMode.HighQuality);
         }
         else
@@ -168,10 +186,48 @@ public partial class ControlsPage : UserControl, ISwishPage
             art.Children.Add(new TextBlock { Text = gesture, Style = (Style)FindResource("Mono"), FontSize = 9.5,
                 Foreground = (Brush)FindResource("Muted"), TextAlignment = TextAlignment.Center, VerticalAlignment = VerticalAlignment.Bottom });
         }
-        return Card(art, label, detail, onClick: null);
+        var card = Card(art, label, detail, onClick);
+        if (blue is not null)
+        {
+            void Fade(double to) => blue.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(to, TimeSpan.FromMilliseconds(150)));
+            card.MouseEnter += (_, _) => Fade(1);
+            card.MouseLeave += (_, _) => { if (!card.IsKeyboardFocused) Fade(0); };
+            card.GotKeyboardFocus += (_, _) => Fade(1);
+            card.LostKeyboardFocus += (_, _) => { if (!card.IsMouseOver) Fade(0); };
+        }
+        return card;
     }
 
-    FrameworkElement VoiceCard(string phrase, string label, CommandDef command)
+    static readonly Dictionary<ImageSource, BitmapSource> _blueCache = new();
+
+    /// <summary>
+    /// The grey dithered hand art recoloured like the mockup's hovered card: black → the hover blue (#092390),
+    /// mid grey → pale blue (#BFD3FF), white → white; transparency kept. Made once per image.
+    /// </summary>
+    internal static BitmapSource BlueDuotone(BitmapSource source)
+    {
+        if (_blueCache.TryGetValue(source, out var cached)) return cached;
+        var bgra = new FormatConvertedBitmap(source, PixelFormats.Bgra32, null, 0);
+        int w = bgra.PixelWidth, h = bgra.PixelHeight, stride = w * 4;
+        var px = new byte[stride * h];
+        bgra.CopyPixels(px, stride, 0);
+        (double R, double G, double B) dark = (9, 35, 144), mid = (191, 211, 255), light = (255, 255, 255);
+        for (int i = 0; i < px.Length; i += 4)
+        {
+            if (px[i + 3] == 0) continue;
+            double l = (0.114 * px[i] + 0.587 * px[i + 1] + 0.299 * px[i + 2]) / 255;   // luminance (BGR order)
+            var (a, b, t) = l < 0.6 ? (dark, mid, l / 0.6) : (mid, light, (l - 0.6) / 0.4);
+            px[i] = (byte)(a.B + (b.B - a.B) * t);
+            px[i + 1] = (byte)(a.G + (b.G - a.G) * t);
+            px[i + 2] = (byte)(a.R + (b.R - a.R) * t);
+        }
+        var result = BitmapSource.Create(w, h, source.DpiX, source.DpiY, PixelFormats.Bgra32, null, px, stride);
+        result.Freeze();
+        return _blueCache[source] = result;
+    }
+
+    /// <summary>A voice-command card. Clicking it starts a custom command copied from this one (phrases, keys, category).</summary>
+    FrameworkElement VoiceCard(string phrase, string label, CommandDef command, string game)
     {
         var top = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         top.Children.Add(new TextBlock { Text = "SAY", Style = (Style)FindResource("Mono"), FontSize = 11, HorizontalAlignment = HorizontalAlignment.Center });
@@ -179,7 +235,21 @@ public partial class ControlsPage : UserControl, ISwishPage
             FontWeight = FontWeights.Bold, TextAlignment = TextAlignment.Center });
         string also = command.Say.Count > 1 ? "Also: " + string.Join(", ", command.Say.Skip(1).Select(s => $"\"{s}\"")) : "";
         string does = command.Do is not null ? string.Join("; ", command.Do) : string.Join(" ", command.Keys);
-        return Card(top, label, null, onClick: null, tooltip: $"{also}\nPresses: {does}".Trim());
+        var template = new CustomFunction
+        {
+            Name = label, VoicePhrases = command.Say.ToList(), Action = ActionOf(command), Game = game, Category = command.Category,
+        };
+        return Card(top, label, null, onClick: () => _app?.ShowCommandEditor(template: template),
+                    tooltip: $"{also}\nPresses: {does}\nClick to make your own version".Trim());
+    }
+
+    /// <summary>A preset command's keys as editor steps: its step program, or its keys tapped in order, then any text.</summary>
+    static string ActionOf(CommandDef c)
+    {
+        var lines = c.Do is not null ? c.Do.ToList()
+                  : c.Keys.Select(k => c.HoldMs is { } ms ? $"tap {k} {ms}" : k).ToList();
+        if (!string.IsNullOrEmpty(c.Text)) lines.Add("type " + c.Text.Replace("\r", "").Replace("\n", " "));
+        return string.Join("\n", lines);
     }
 
     FrameworkElement CustomCard(CustomFunction f, string top) =>
@@ -193,6 +263,7 @@ public partial class ControlsPage : UserControl, ISwishPage
              "Add", what, onClick: () => _app?.ShowCommandEditor(game: game, category: category, gesture: gesture));
 
     /// <summary>A chamfered card. Clickable cards are buttons (focusable); read-only ones are not tab stops.</summary>
+    /// <remarks>Every card on this screen is clickable now: built-in ones start a custom copy, yours open for editing.</remarks>
     FrameworkElement Card(UIElement top, string label, string? detail, Action? onClick, string? tooltip = null)
     {
         var body = new DockPanel();

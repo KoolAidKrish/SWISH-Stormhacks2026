@@ -142,15 +142,15 @@ export default function FingerKeys() {
     return [lerp(p[0], FOLDED[i][0], t), lerp(p[1], FOLDED[i][1], t)] as [number, number]
   })
 
-  let status = 'Open hand · nothing pressed'
-  if (!visible) status = 'Hand out of view · every key released'
-  else if (resting) status = 'Fist · rest pose · nothing pressed'
+  let status = 'Open hand, nothing pressed'
+  if (!visible) status = 'Hand out of view, every key released'
+  else if (resting) status = 'Fist: rest pose, nothing pressed'
   else if (held.length) status = `Holding ${held.join(' + ')}`
 
   return (
     <div className="fk" ref={box} data-reveal>
       <div className={`fk-stage ${visible ? '' : 'gone'} ${resting ? 'rest' : ''}`}>
-        <span className="fk-tag">LEFT HAND · CAM</span>
+        <span className="fk-tag">LEFT HAND CAMERA</span>
         <svg viewBox="0 0 200 220" className="fk-hand" role="img" aria-label={status}>
           <g className="fk-skel">
             {BONES.map(([a, b], i) => (

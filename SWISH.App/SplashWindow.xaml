@@ -4,7 +4,7 @@
         Title="SWISH" WindowStyle="None" ResizeMode="NoResize" ShowInTaskbar="True"
         WindowStartupLocation="CenterScreen" Background="#262626" Topmost="True">
     <Window.Resources>
-        <SolidColorBrush x:Key="Blue" Color="#1C66FF" />
+        <SolidColorBrush x:Key="Blue" Color="#1761FF" />
         <SolidColorBrush x:Key="Pink" Color="#F59AF7" />
         <SolidColorBrush x:Key="Ground" Color="#262626" />
     </Window.Resources>

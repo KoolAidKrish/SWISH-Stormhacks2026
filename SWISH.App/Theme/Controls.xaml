@@ -120,9 +120,9 @@
         </Setter>
     </Style>
 
-    <!-- Primary call to action: teal fill, white outline ("START CALIBRATING →"). -->
+    <!-- Primary call to action: blue fill, white outline ("START CALIBRATING →"). -->
     <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-        <Setter Property="Background" Value="{StaticResource Teal}" />
+        <Setter Property="Background" Value="{StaticResource Blue}" />
         <Setter Property="FontSize" Value="15" />
         <Setter Property="Padding" Value="14,8" />
     </Style>
@@ -149,7 +149,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
                     <Border x:Name="Box" BorderBrush="{StaticResource Muted}" BorderThickness="1.5" Padding="8,4" Opacity="0.5" Background="Transparent">
-                        <ContentPresenter />
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
@@ -168,7 +168,7 @@
         </Setter>
     </Style>
 
-    <!-- ===== Section bar: teal, chamfered, icon + title ===== -->
+    <!-- ===== Section bar: blue, chamfered, icon + title ===== -->
     <Style x:Key="SectionBar" TargetType="ContentControl">
         <Setter Property="Foreground" Value="{StaticResource White}" />
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
@@ -179,7 +179,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="ContentControl">
                     <Grid MinHeight="40">
-                        <c:ChamferShape Fill="{StaticResource Teal}" Chamfer="{StaticResource Chamfer}" Corner="BottomRight" />
+                        <c:ChamferShape Fill="{StaticResource Blue}" Chamfer="{StaticResource Chamfer}" Corner="BottomRight" />
                         <Rectangle Width="5" HorizontalAlignment="Left" Fill="{StaticResource Pink}" />
                         <ContentPresenter Margin="20,6,28,6" VerticalAlignment="Center" />
                     </Grid>
@@ -188,7 +188,7 @@
         </Setter>
     </Style>
 
-    <!-- Collapsible section: an Expander whose header is the teal section bar with a chevron.
+    <!-- Collapsible section: an Expander whose header is the blue section bar with a chevron.
          Space/Enter toggle it from the keyboard. -->
     <Style x:Key="SectionExpander" TargetType="Expander">
         <Setter Property="Foreground" Value="{StaticResource White}" />
@@ -204,7 +204,7 @@
                             <ToggleButton.Template>
                                 <ControlTemplate TargetType="ToggleButton">
                                     <Grid MinHeight="40" Background="Transparent">
-                                        <c:ChamferShape x:Name="Bar" Fill="{StaticResource Teal}" Chamfer="{StaticResource Chamfer}" Corner="BottomRight" />
+                                        <c:ChamferShape x:Name="Bar" Fill="{StaticResource Blue}" Chamfer="{StaticResource Chamfer}" Corner="BottomRight" />
                                         <Rectangle Width="5" HorizontalAlignment="Left" Fill="{StaticResource Pink}" />
                                         <DockPanel Margin="20,6,30,6">
                                             <TextBlock x:Name="Chevron" DockPanel.Dock="Right" Text="▼" FontSize="13" Foreground="{StaticResource White}"
@@ -219,7 +219,7 @@
                                             <Setter TargetName="Chevron" Property="Text" Value="▶" />
                                         </Trigger>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Bar" Property="Fill" Value="{StaticResource Teal2}" />
+                                            <Setter TargetName="Bar" Property="Fill" Value="{StaticResource Blue2}" />
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -282,7 +282,7 @@
         </Setter>
     </Style>
 
-    <!-- ===== Card: rounded outline (gesture / voice cards) ===== -->
+    <!-- ===== Card: chamfered outline with softly rounded corners (gesture / voice cards) ===== -->
     <Style x:Key="CardButton" TargetType="Button">
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
         <Setter Property="Foreground" Value="{StaticResource White}" />
@@ -294,10 +294,39 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Grid x:Name="Lift">
-                        <Grid.RenderTransform><TranslateTransform /></Grid.RenderTransform>
-                        <Border x:Name="Shape" Background="{StaticResource Panel}" BorderBrush="{StaticResource Muted}" BorderThickness="1.2" CornerRadius="10" />
-                        <ContentPresenter Margin="10,8" />
+                    <ControlTemplate.Resources>
+                        <Storyboard x:Key="LiftOn">
+                            <DoubleAnimation Storyboard.TargetName="Lift" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                             To="-3" Duration="0:0:0.12" />
+                            <DoubleAnimation Storyboard.TargetName="Lift" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                             To="-3" Duration="0:0:0.12" />
+                            <DoubleAnimation Storyboard.TargetName="Overlay" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15" />
+                            <DoubleAnimation Storyboard.TargetName="Shadow" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.12" />
+                        </Storyboard>
+                        <Storyboard x:Key="LiftOff">
+                            <DoubleAnimation Storyboard.TargetName="Lift" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                             To="0" Duration="0:0:0.15" />
+                            <DoubleAnimation Storyboard.TargetName="Lift" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                             To="0" Duration="0:0:0.15" />
+                            <DoubleAnimation Storyboard.TargetName="Overlay" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2" />
+                            <DoubleAnimation Storyboard.TargetName="Shadow" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15" />
+                        </Storyboard>
+                    </ControlTemplate.Resources>
+                    <Grid>
+                        <!-- Hard drop shadow: stays put while the card lifts up-left, so it shows down the right and bottom edges -->
+                        <c:ChamferShape x:Name="Shadow" Fill="#141414" Opacity="0" IsHitTestVisible="False"
+                                        Chamfer="24" Radius="7" Corner="BottomRight">
+                            <c:ChamferShape.RenderTransform><TranslateTransform X="3" Y="3" /></c:ChamferShape.RenderTransform>
+                        </c:ChamferShape>
+                        <Grid x:Name="Lift">
+                            <Grid.RenderTransform><TranslateTransform /></Grid.RenderTransform>
+                            <c:ChamferShape x:Name="Shape" Fill="{StaticResource Panel}" Stroke="{StaticResource Muted}" StrokeThickness="1.2"
+                                            Chamfer="24" Radius="7" Corner="BottomRight" />
+                            <!-- Hover feedback: a blue wash across the card, under its content so the art and the text stay clear -->
+                            <c:ChamferShape x:Name="Overlay" Fill="{StaticResource CardHover}" Opacity="0" IsHitTestVisible="False"
+                                            Chamfer="23" Radius="6" Corner="BottomRight" Margin="1.2" />   <!-- inset: keeps the border fully visible -->
+                            <ContentPresenter Margin="10,8" />
+                        </Grid>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <!-- Clickable cards lift and go pink under the pointer; read-only ones (not tab stops) stay still. -->
@@ -306,26 +335,20 @@
                                 <Condition Property="IsMouseOver" Value="True" />
                                 <Condition Property="IsTabStop" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="Shape" Property="BorderBrush" Value="{StaticResource Pink}" />
-                            <MultiTrigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="Lift" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                                                         To="-3" Duration="0:0:0.12" />
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </MultiTrigger.EnterActions>
-                            <MultiTrigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="Lift" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                                                         To="0" Duration="0:0:0.15" />
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </MultiTrigger.ExitActions>
+                            <Setter TargetName="Shape" Property="Stroke" Value="{StaticResource Pink}" />
+                            <Setter TargetName="Shape" Property="StrokeThickness" Value="2" />
+                            <MultiTrigger.EnterActions><BeginStoryboard Storyboard="{StaticResource LiftOn}" /></MultiTrigger.EnterActions>
+                            <MultiTrigger.ExitActions><BeginStoryboard Storyboard="{StaticResource LiftOff}" /></MultiTrigger.ExitActions>
                         </MultiTrigger>
+                        <!-- The same look switched on from code (CardHighlight.IsOn), e.g. the tutorial stepping through its cards -->
+                        <Trigger Property="c:CardHighlight.IsOn" Value="True">
+                            <Setter TargetName="Shape" Property="Stroke" Value="{StaticResource Pink}" />
+                            <Setter TargetName="Shape" Property="StrokeThickness" Value="2" />
+                            <Trigger.EnterActions><BeginStoryboard Storyboard="{StaticResource LiftOn}" /></Trigger.EnterActions>
+                            <Trigger.ExitActions><BeginStoryboard Storyboard="{StaticResource LiftOff}" /></Trigger.ExitActions>
+                        </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="Shape" Property="BorderBrush" Value="{StaticResource White}" />
+                            <Setter TargetName="Shape" Property="Stroke" Value="{StaticResource White}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -333,7 +356,7 @@
         </Setter>
     </Style>
 
-    <!-- Big on/off tile ("SAY A PHRASE" / "MAKE A GESTURE"): outlined when off, teal when on. -->
+    <!-- Big on/off tile ("SAY A PHRASE" / "MAKE A GESTURE"): outlined when off, blue when on. -->
     <Style x:Key="TriggerToggle" TargetType="ToggleButton">
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
         <Setter Property="Foreground" Value="{StaticResource White}" />
@@ -346,7 +369,7 @@
                     <Grid RenderTransformOrigin="0.5,0.5">
                         <Grid.RenderTransform><ScaleTransform x:Name="Squash" /></Grid.RenderTransform>
                         <c:ChamferShape x:Name="Shape" Fill="{StaticResource Panel}" Stroke="{StaticResource Muted}" StrokeThickness="1.2"
-                                        Chamfer="16" Corner="BottomRight" />
+                                        Chamfer="24" Radius="7" Corner="BottomRight" />
                         <ContentPresenter x:Name="Body" Margin="16,10" VerticalAlignment="Center" Opacity="0.6" />
                     </Grid>
                     <ControlTemplate.Triggers>
@@ -369,7 +392,7 @@
                             </Trigger.ExitActions>
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Shape" Property="Fill" Value="{StaticResource Teal}" />
+                            <Setter TargetName="Shape" Property="Fill" Value="{StaticResource Blue}" />
                             <Setter TargetName="Shape" Property="Stroke" Value="{StaticResource White}" />
                             <Setter TargetName="Body" Property="Opacity" Value="1" />
                         </Trigger>
@@ -471,7 +494,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsHighlighted" Value="True">
-                            <Setter TargetName="Row" Property="Background" Value="{StaticResource Teal}" />
+                            <Setter TargetName="Row" Property="Background" Value="{StaticResource Blue}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.4" />

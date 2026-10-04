@@ -9,6 +9,8 @@
     <!-- WinForms only for the tray NotifyIcon -->
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- exe, taskbar and window icon (and the tray icon, see TrayIcon) -->
+    <ApplicationIcon>Assets\Brand\swish.ico</ApplicationIcon>
     <AssemblyName>SWISH</AssemblyName>
     <RootNamespace>Swish.App</RootNamespace>
     <!-- WinForms analyzer: wants DPI set via its API, but this is a WPF app (WinForms is only the tray icon). -->

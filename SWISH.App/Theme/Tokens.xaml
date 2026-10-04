@@ -1,6 +1,6 @@
 <!--
     SWISH design tokens. Colors are the same values as the landing site (landing/src/index.css),
-    sampled from the mockups: charcoal backgrounds, deep teal brand, hot pink accent.
+    sampled from the mockups: charcoal backgrounds, electric blue brand, hot pink accent.
     Fonts are bundled (SWISH.App/Fonts, SIL Open Font License): Barlow Condensed for display,
     JetBrains Mono for labels, buttons and body.
 -->
@@ -13,9 +13,10 @@
     <Color x:Key="Bg2Color">#1E1E1E</Color>         <!-- deeper wells (sidebar, camera letterbox) -->
     <Color x:Key="PanelColor">#2E2E2E</Color>       <!-- cards -->
     <Color x:Key="LineColor">#3D3D3D</Color>        <!-- dividers, inactive outlines -->
-    <Color x:Key="TealColor">#00566E</Color>        <!-- brand: section bars, primary button -->
-    <Color x:Key="Teal2Color">#007493</Color>       <!-- brand hover -->
-    <Color x:Key="TealTextColor">#6CC6DE</Color>    <!-- teal readable as text on dark (~8:1) -->
+    <Color x:Key="BlueColor">#1761FF</Color>        <!-- brand: section bars, primary button -->
+    <Color x:Key="Blue2Color">#4A85FF</Color>       <!-- brand hover -->
+    <Color x:Key="BlueTextColor">#8FB3FF</Color>
+    <Color x:Key="CardHoverColor">#092390</Color>   <!-- deep blue behind a hovered card (from the mockup) -->    <!-- blue readable as text on dark (~7:1) -->
     <Color x:Key="PinkColor">#F59AF7</Color>        <!-- accent: highlights, traced path, focus ring -->
     <Color x:Key="WhiteColor">#F5F5F2</Color>       <!-- text, outlines -->
     <Color x:Key="GrayColor">#D9D9D9</Color>
@@ -29,9 +30,10 @@
     <SolidColorBrush x:Key="Bg2" Color="{StaticResource Bg2Color}" />
     <SolidColorBrush x:Key="Panel" Color="{StaticResource PanelColor}" />
     <SolidColorBrush x:Key="Line" Color="{StaticResource LineColor}" />
-    <SolidColorBrush x:Key="Teal" Color="{StaticResource TealColor}" />
-    <SolidColorBrush x:Key="Teal2" Color="{StaticResource Teal2Color}" />
-    <SolidColorBrush x:Key="TealText" Color="{StaticResource TealTextColor}" />
+    <SolidColorBrush x:Key="Blue" Color="{StaticResource BlueColor}" />
+    <SolidColorBrush x:Key="Blue2" Color="{StaticResource Blue2Color}" />
+    <SolidColorBrush x:Key="BlueText" Color="{StaticResource BlueTextColor}" />
+    <SolidColorBrush x:Key="CardHover" Color="{StaticResource CardHoverColor}" />
     <SolidColorBrush x:Key="Pink" Color="{StaticResource PinkColor}" />
     <SolidColorBrush x:Key="White" Color="{StaticResource WhiteColor}" />
     <SolidColorBrush x:Key="Gray" Color="{StaticResource GrayColor}" />

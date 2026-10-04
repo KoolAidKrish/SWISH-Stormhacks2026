@@ -34,6 +34,8 @@ public partial class SettingsPage : UserControl, ISwishPage
         _meterTimer = new(TimeSpan.FromMilliseconds(50), System.Windows.Threading.DispatcherPriority.Render, (_, _) => DrawMeter(), Dispatcher);
     }
 
+    public bool ShowsCameraCorner => true;
+
     public IInputElement? DefaultFocus => CameraBox;
 
     public void OnShown(App app, ShellWindow shell)

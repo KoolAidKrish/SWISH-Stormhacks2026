@@ -14,9 +14,11 @@
         <!-- ===== Controls ===== -->
         <DockPanel Grid.Column="1" Margin="34,26,30,0">
             <!-- Header, one line: title, the selected game's banner (fading in), the DEFAULT / CUSTOMIZE toggle -->
-            <!-- right margin = the content's 10 + the scroll bar's 8, so the toggle ends where the teal bars do -->
+            <!-- right margin = the content's 10 + the scroll bar's 8, so the toggle ends where the blue bars do -->
             <DockPanel DockPanel.Dock="Top" Height="64" Margin="0,0,18,18">
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="▶  TUTORIAL" Margin="0,0,14,0" Click="OnTutorial" Padding="8,4" FontSize="12" FontWeight="Bold"
+                            AutomationProperties.Name="Show the hand controls tutorial" />
                     <RadioButton x:Name="DefaultToggle" Style="{StaticResource SegmentToggle}" IsChecked="True" Content="DEFAULT"
                                  AutomationProperties.Name="Default controls" />
                     <RadioButton x:Name="CustomizeToggle" Style="{StaticResource SegmentToggle}" Content="CUSTOMIZE +"

@@ -8,6 +8,8 @@ public sealed class UiSettings
 {
     public int Camera { get; set; }
     public int Microphone { get; set; }
+    /// <summary>The small camera view in the corner of the menu screens (closed with its ×).</summary>
+    public bool ShowCameraCorner { get; set; } = true;
     /// <summary>Name of the GPU the hand models run on (names survive adapters being renumbered); null = the CPU.</summary>
     public string? Gpu { get; set; }
     /// <summary>Voice assistant (spoken confirmations): ElevenLabs voice id (null = settings.json's), volume 0..1, mute.</summary>

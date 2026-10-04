@@ -38,6 +38,8 @@ public partial class App : Application
     /// <summary>The user's custom gesture/voice functions.</summary>
     public CustomFunctionManager CustomFunctions { get; private set; } = null!;
     public UiSettings Settings { get; private set; } = new();
+    /// <summary>Built-in hand controls the user rebound, per game.</summary>
+    public HandBindings HandBindings { get; private set; } = null!;
 
     public static string DataDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SWISH");
     string CalibrationPath => Path.Combine(DataDir, "calibration.json");
@@ -80,6 +82,7 @@ public partial class App : Application
         Directory.CreateDirectory(DataDir);
         GestureEngine.DisableBackgroundThrottling();
         Settings = UiSettings.Load(DataDir);
+        HandBindings = HandBindings.Load(DataDir);
 
         // ---- Hand gestures ----
         Gestures = new GestureEngine(new GestureOptions
@@ -97,6 +100,8 @@ public partial class App : Application
 
         // ---- Voice ----
         Voice = TryCreateVoice();
+
+        ApplyHandBindings();   // the current game's rebound hand controls (needs the game, from voice settings)
 
         // ---- Custom functions (gestures + voice phrases) ----
         CustomFunctions = new CustomFunctionManager(DataDir, Gestures, Voice);
@@ -190,6 +195,7 @@ public partial class App : Application
         Voice?.SwitchPreset(preset);
         Settings.Game = presetId;
         Settings.Save(DataDir);
+        ApplyHandBindings();
     }
 
     readonly object _handsGate = new();
@@ -213,6 +219,23 @@ public partial class App : Application
     {
         SetHandsOff(paused);
         if (Voice is not null) Voice.MicOff = paused;
+    }
+
+    /// <summary>Pushes the current game's rebound hand controls to the gesture engine (defaults where not rebound).</summary>
+    public void ApplyHandBindings()
+    {
+        var game = CurrentGame;
+        ushort[]? Keys(string id) =>
+            HandBindings.Get(game, id) is { } chord ? (TryParseChord(chord) is { } keys ? keys : null) : null;
+        var fingers = HandControl.All.Where(c => c.Finger is not null && Keys(c.Id) is not null)
+            .ToDictionary(c => c.Finger!.Value, c => Keys(c.Id)!);
+        Gestures.SetHandBindings(fingers, Keys("pinch-index"), Keys("pinch-middle"), Keys("pinch-ring"));
+    }
+
+    static ushort[]? TryParseChord(string chord)
+    {
+        try { return KeySender.ParseChord(chord).ToArray(); }
+        catch (FormatException) { return null; }
     }
 
     public void SelectCamera(int index)
@@ -240,10 +263,12 @@ public partial class App : Application
 
     /// <summary>Opens the command editor in the main window: editing a saved command, or a new one
     /// (pre-set to a game/category, and starting with a gesture or a phrase as its trigger).</summary>
-    public void ShowCommandEditor(CustomFunction? edit = null, string? game = null, string? category = null, bool gesture = false)
+    /// <param name="template">A new command pre-filled from this (e.g. a built-in control's card); not saved until the user saves.</param>
+    public void ShowCommandEditor(CustomFunction? edit = null, string? game = null, string? category = null, bool gesture = false,
+                                  CustomFunction? template = null)
     {
         ShowWindow();
-        _shell?.Navigate(new CommandEditorPage(edit, game ?? CurrentGame, category, gesture));
+        _shell?.Navigate(new CommandEditorPage(edit, game ?? template?.Game ?? CurrentGame, category, gesture, template));
     }
 
     public void ShowDebugDashboard()
