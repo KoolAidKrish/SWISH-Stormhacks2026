@@ -10,7 +10,7 @@ namespace HandGestureRecognition.Mouse;
 /// Drive it from your existing frame loop: call Update() then Render() every frame.
 /// Your loop must keep calling Cv2.WaitKey() so the window repaints.
 /// </summary>
-public sealed class ScreenCalibrator : IDisposable
+public sealed class ScreenCalibrator : ICalibrator
 {
     const string WindowName = "Calibration";
 

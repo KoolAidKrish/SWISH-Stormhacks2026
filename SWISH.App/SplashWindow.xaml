@@ -1,0 +1,69 @@
+<Window x:Class="Swish.App.SplashWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="SWISH" WindowStyle="None" ResizeMode="NoResize" ShowInTaskbar="True"
+        WindowStartupLocation="CenterScreen" Background="#262626" Topmost="True">
+    <Window.Resources>
+        <SolidColorBrush x:Key="Blue" Color="#1C66FF" />
+        <SolidColorBrush x:Key="Pink" Color="#F59AF7" />
+        <SolidColorBrush x:Key="Ground" Color="#262626" />
+    </Window.Resources>
+
+    <!-- The design is laid out on a 902 x 508 canvas (16:9) and scaled to the window. -->
+    <Viewbox x:Name="Root" Stretch="Uniform">
+        <Canvas x:Name="Stage" Width="902" Height="508" Background="{StaticResource Ground}" ClipToBounds="True">
+
+            <!-- ===== Left side ===== -->
+            <!-- Stripes extend far past the frame along their diagonal, so sliding them in/out never shows an end -->
+            <Polygon x:Name="PinkStripe" Fill="{StaticResource Pink}"
+                     Points="900,-702 1055,-702 -545,898 -700,898" />
+            <Polygon x:Name="TopLeftBlock" Fill="{StaticResource Blue}"
+                     Points="-10,-10 144,-10 144,211 -10,59" />
+            <Polygon x:Name="LeftTriA" Fill="{StaticResource Blue}" Points="7,211 75,144 75,278" />
+            <Polygon x:Name="LeftTriB" Fill="{StaticResource Blue}" Points="75,279 144,211 144,348" />
+            <Polygon x:Name="LeftTriC" Fill="{StaticResource Blue}" Points="-10,351 75,268 75,418" />
+            <Polygon x:Name="PinkStripeSmall" Fill="{StaticResource Pink}"
+                     Points="-600,-208 500,892 448,892 -600,-156" />
+
+            <!-- ===== Right side ===== -->
+            <Canvas x:Name="RightBlock">
+                <Polygon Fill="{StaticResource Pink}" Points="492,518 912,80 912,518" />
+                <Polygon Fill="{StaticResource Ground}" Points="533,518 912,123 912,147 556,518" />
+                <Line X1="604" Y1="518" X2="912" Y2="197" Stroke="{StaticResource Blue}" StrokeThickness="1.5" />
+            </Canvas>
+            <Polygon x:Name="RightTriA" Fill="{StaticResource Blue}" Points="687,371 807,246 807,496" />
+            <Polygon x:Name="RightTriB" Fill="{StaticResource Blue}" Points="807,326 877,261 877,391" />
+            <Polygon x:Name="RightTriC" Fill="{StaticResource Blue}" Points="807,456 877,391 877,521" />
+
+            <!-- Top-right X: two bars crossing -->
+            <Canvas x:Name="Cross" Canvas.Left="817" Canvas.Top="58">
+                <Rectangle Width="330" Height="46" Fill="{StaticResource Blue}" Canvas.Left="-165" Canvas.Top="-23">
+                    <Rectangle.RenderTransform><RotateTransform Angle="40" CenterX="165" CenterY="23" /></Rectangle.RenderTransform>
+                </Rectangle>
+                <Rectangle Width="330" Height="46" Fill="{StaticResource Blue}" Canvas.Left="-165" Canvas.Top="-23">
+                    <Rectangle.RenderTransform><RotateTransform Angle="-40" CenterX="165" CenterY="23" /></Rectangle.RenderTransform>
+                </Rectangle>
+            </Canvas>
+
+            <!-- ===== Lines ===== -->
+            <Polyline x:Name="ThickLine" Stroke="{StaticResource Blue}" StrokeThickness="10" StrokeLineJoin="Miter"
+                      Points="167,-10 167,376 280,486 912,486" />
+            <Path x:Name="Outline" Stroke="{StaticResource Blue}" StrokeThickness="1.5" StrokeLineJoin="Miter"
+                  Data="M 892,336 L 892,41 852,1 637,1 557,44 219,44 192,71 192,351 302,464 772,464 812,501" />
+
+            <Line x:Name="RuleLeft" X1="47" Y1="298" X2="257" Y2="298" Stroke="#5E5E5E" StrokeThickness="1" />
+            <Line x:Name="RuleRight" X1="644" Y1="298" X2="857" Y2="298" Stroke="#5E5E5E" StrokeThickness="1" />
+
+            <!-- ===== Text ===== -->
+            <!-- Letter outlines, fitted exactly into the design's title box (see BuildTitle) -->
+            <Canvas x:Name="TitleLetters" />
+
+            <!-- Tracked-out subtitle: one cell per character (WPF has no letter-spacing) -->
+            <StackPanel x:Name="Subtitle" Canvas.Left="0" Canvas.Top="277" Width="902" />
+
+            <TextBlock x:Name="Tagline" Canvas.Left="0" Canvas.Top="344" Width="902" TextAlignment="Center"
+                       FontFamily="Cascadia Mono, Consolas" FontSize="16.5" Foreground="#E6E6E6" LineHeight="23"
+                       LineStackingStrategy="BlockLineHeight" />
+        </Canvas>
+    </Viewbox>
+</Window>

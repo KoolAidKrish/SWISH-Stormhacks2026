@@ -18,6 +18,9 @@ setx ELEVENLABS_API_KEY "your-key"     # once
 
 Or open `SWISH.slnx` in Visual Studio, set **SWISH.App** as the startup project and press F5.
 
+It opens with an animated title card (~4 s; click or press a key to skip, or start with `--no-splash`).
+`SWISH.exe --render-splash <folder>` writes its frames to PNGs without starting the camera or mic.
+
 The window shows the camera with hand tracking on the left, and voice on the right: connection,
 the active preset, a live transcript while you hold **Caps Lock**, and a log of everything heard
 and the keys it pressed. Closing the window keeps SWISH running in the tray (double-click to bring
@@ -25,6 +28,14 @@ it back; right-click for hand mouse, voice, preset, recalibrate, exit).
 
 First run opens a full-screen calibration: hold your hand still on each target. It's saved to
 `%LOCALAPPDATA%\SWISH\calibration.json`; **Recalibrate…** redoes it.
+
+**Follow the dot…** is the alternative: a dot snakes across the screen row by row for ~30 s and you
+follow it with your palm along the highlighted line. The camera view fills the screen behind it, and
+the border turns green while your hand is tracked (red when it isn't). No holding still (easier with an unsteady hand), and the mapping is fitted from
+hundreds of samples across the whole screen. It measures how far your hand trails the dot and
+corrects for it, drops frames where tracking glitched, and refuses to save a bad run (hand lost too
+often, hand barely moved, path not followed) with a message saying why. In the console app, press
+`p` (or start with `--calibrate_pursuit`); `c` is still the 9-point one.
 
 **Ctrl+Alt+M** hand mouse on/off · **Ctrl+Alt+J** mouse mode · **Ctrl+Alt+V** show/hide window · **Ctrl+Alt+Q** quit.
 

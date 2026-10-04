@@ -6,6 +6,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using HandGestureRecognition;
+using HandGestureRecognition.Mouse;
 using VoiceKeys;
 
 namespace Swish.App;
@@ -89,7 +90,8 @@ public partial class MainWindow : Window
 
     void OnToggleHandMouse(object sender, RoutedEventArgs e) => _app.Gestures.ToggleMouse();
     void OnCycleMouseMode(object sender, RoutedEventArgs e) => _app.Gestures.CycleMouseMode();
-    void OnRecalibrate(object sender, RoutedEventArgs e) => _app.Gestures.Recalibrate();
+    void OnRecalibrate(object sender, RoutedEventArgs e) => _app.Gestures.Recalibrate(CalibrationKind.Points);
+    void OnRecalibratePursuit(object sender, RoutedEventArgs e) => _app.Gestures.Recalibrate(CalibrationKind.Pursuit);
 
     void OnToggleVoice(object sender, RoutedEventArgs e)
     {
@@ -134,7 +136,7 @@ public partial class MainWindow : Window
         (GestureBanner.Text, GestureBanner.Foreground) =
             s.Error is not null ? ("Camera stopped", ErrorBrush)
             : !s.Running ? ("Starting…", InfoBrush)
-            : s.Calibrating ? ("Calibrating: hold your hand on each target", EarlyBrush)
+            : s.Calibrating ? ("Calibrating: follow the instructions on screen", EarlyBrush)
             : !s.MouseEnabled ? ("Hand mouse off", IgnoredBrush)
             : s.Pinching ? ("Click", CommandBrush)
             : s.Clutched ? ("Lifted (fist)", EarlyBrush)
