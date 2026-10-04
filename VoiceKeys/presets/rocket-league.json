@@ -1,0 +1,83 @@
+{
+  "name": "Rocket League",
+  "switchPhrases": [ "rocket league mode", "rocket league" ],
+  "include": [ "gestures" ],     // voice control for the hand-gesture app, see gestures.json
+  "announce": "Rocket League mode",
+  "speakByDefault": false,   // no voice confirmations mid-match; they'd talk over the game
+
+  // Uses Rocket League's default keyboard + mouse bindings:
+  //   W throttle · S brake/reverse · A/D steer · RMB jump · LMB boost · Left Shift powerslide · Space ball cam
+  // If you've rebound anything in-game, change the key names below to match.
+  //
+  // Step programs ("do"):
+  //   latch K        hold K until something unlatches it ("drive" keeps W down)
+  //   unlatch K      let go of a latched key        release   let go of all latched keys
+  //   hold K ms      press K for ms, then let go    tap K [ms] same, default keyHoldMs
+  //   down K / up K  manual press/release           wait ms   pause inside the program
+  //   liFt / resume  temporarily drop latched keys and restore them after (used by flips so
+  //                  "drive" doesn't bend a side flip into a diagonal); skipped if you change
+  //                  driving state mid-flip.
+  // Keys can be chords: "down w+a".
+  //
+  // Modifiers: commands with "baseMs" are scalable. Put "{ms}" in their steps where the duration goes,
+  // and modifier words stretch or shrink it the way English reads:
+  //   "left"              350 ms         "hard left"          350 × 2.2  = 770 ms
+  //   "little left"       350 × 0.35     "really hard left"   350 × 2.2^1.7 ≈ 1340 ms
+  //   "left a little"     trailing modifiers apply to the action before them
+  //   "hard left then little boost"  chains work; each modifier binds to the next action
+  // Durations are clamped to minMs..maxMs.
+  "modifiers": [
+    { "say": [ "hard", "sharp", "big", "long", "lot", "a lot", "more" ],                          "scale": 2.2 },
+    { "say": [ "little", "a little", "bit", "a bit", "slight", "slightly", "small", "short",
+               "quick", "tiny", "nudge", "less" ],                                                 "scale": 0.35 },
+    { "say": [ "really", "very", "super", "extra" ],                                               "intensify": 1.7 }
+  ],
+  "minMs": 30,
+  "maxMs": 4000,
+
+  "commands": [
+
+    // ---- Driving (latched: stays on until you say otherwise) ----
+    { "say": [ "drive", "go" ],                      "do": [ "unlatch s", "latch w" ] },
+    { "say": [ "reverse", "back up" ],               "do": [ "unlatch w", "latch s" ] },
+    { "say": [ "stop", "brake" ],                    "do": [ "release" ] },
+
+    // ---- Directional inputs (timed; scale with modifiers) ----
+    { "say": [ "left" ],                             "baseMs": 350,  "do": [ "hold a {ms}" ] },
+    { "say": [ "right" ],                            "baseMs": 350,  "do": [ "hold d {ms}" ] },
+    { "say": [ "forward" ],                          "baseMs": 600,  "do": [ "hold w {ms}" ] },
+    { "say": [ "back", "backward", "backwards" ],    "baseMs": 600,  "do": [ "hold s {ms}" ] },
+    { "say": [ "turn around", "u turn" ],            "do": [ "down shift", "hold a 900", "up shift" ] },
+
+    // ---- Boost ----
+    { "say": [ "boost" ],                            "baseMs": 1500, "do": [ "hold lmb {ms}" ] },
+    { "say": [ "full boost", "boost on" ],           "do": [ "latch lmb" ] },
+    { "say": [ "boost off", "no boost" ],            "do": [ "unlatch lmb" ] },
+
+    // ---- Jumps (holding jump longer jumps higher, so "big jump" / "little jump" work too) ----
+    { "say": [ "jump" ],                             "baseMs": 60,   "do": [ "tap rmb {ms}" ] },
+    { "say": [ "double jump" ],                      "do": [ "tap rmb 60", "wait 90", "tap rmb 60" ] },
+
+    // ---- Flips: jump, then a second jump while holding the direction ----
+    { "say": [ "flip", "front flip", "flip forward", "flip front" ],
+      "do": [ "lift", "tap rmb 50", "wait 40", "latch w", "tap rmb 50", "wait 150", "unlatch w", "resume" ] },
+    { "say": [ "backflip", "back flip", "flip back", "flip backward" ],
+      "do": [ "lift", "tap rmb 50", "wait 40", "down s",   "tap rmb 50", "wait 150", "up s",   "resume" ] },
+    { "say": [ "flip left", "side flip left" ],
+      "do": [ "lift", "tap rmb 50", "wait 70", "down a",   "tap rmb 50", "wait 150", "up a",   "resume" ] },
+    { "say": [ "flip right", "side flip right" ],
+      "do": [ "lift", "tap rmb 50", "wait 70", "down d",   "tap rmb 50", "wait 150", "up d",   "resume" ] },
+    { "say": [ "flip front left", "flip forward left" ],
+      "do": [ "lift", "tap rmb 50", "wait 70", "down w+a", "tap rmb 50", "wait 150", "up w+a", "resume" ] },
+    { "say": [ "flip front right", "flip forward right" ],
+      "do": [ "lift", "tap rmb 50", "wait 70", "down w+d", "tap rmb 50", "wait 150", "up w+d", "resume" ] },
+    { "say": [ "flip back left" ],
+      "do": [ "lift", "tap rmb 50", "wait 70", "down s+a", "tap rmb 50", "wait 150", "up s+a", "resume" ] },
+    { "say": [ "flip back right" ],
+      "do": [ "lift", "tap rmb 50", "wait 70", "down s+d", "tap rmb 50", "wait 150", "up s+d", "resume" ] },
+
+    // ---- Extras ----
+    { "say": [ "powerslide", "drift" ],              "baseMs": 500,  "do": [ "hold shift {ms}" ] },
+    { "say": [ "ball cam", "camera" ],               "keys": [ "space" ] }
+  ]
+}

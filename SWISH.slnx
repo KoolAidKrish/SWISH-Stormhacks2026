@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="HandGestureRecognition/HandGestureRecognition.csproj" />
+  <Project Path="SWISH.App/SWISH.App.csproj" />
+  <Project Path="VoiceKeys/VoiceKeys.csproj" />
+</Solution>

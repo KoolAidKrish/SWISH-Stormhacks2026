@@ -1,0 +1,45 @@
+{
+  // Preset to start in (a file name in presets/ without .json). Switch by voice: say a preset's switch phrase.
+  "preset": "desktop",
+
+  // Realtime speech-to-text settings sent to ElevenLabs.
+  "scribe": {
+    "modelId": "scribe_v2_realtime",
+    "languageCode": "en",
+    "vadSilenceSecs": 0.4,   // open mic only: pause this long after speaking and the command fires
+    "useKeyterms": true      // bias recognition toward the active preset's phrases
+  },
+
+  "micDevice": 0,            // run with --list-mics to see the options
+
+  // Hold the key to talk; releasing it finalizes the command immediately (~100 ms).
+  // Off = open mic, where ElevenLabs waits for vadSilenceSecs of silence instead.
+  "pushToTalk": {
+    "enabled": true,
+    "key": "capslock",       // any key name, or mouse3 / mouse4 / mouse5. The game still sees it.
+    "prerollMs": 300,        // include audio from just before the press
+    "tailMs": 150            // keep sending briefly after release
+  },
+
+  // Spoken confirmations via ElevenLabs text-to-speech. Generated once, then cached on disk.
+  "speech": {
+    "enabled": true,
+    "voiceId": "JBFqnCBsd6RMkjVDRZzb",  // any voice ID from your ElevenLabs voice library
+    "modelId": "eleven_flash_v2_5",
+    "volume": 0.7,
+    "speakByDefault": true,             // say the command's first phrase unless it has its own "speak" (presets can override)
+    "pausedLine": "Voice commands paused",
+    "resumedLine": "Listening"
+  },
+
+  // Latency
+  "fireOnPartial": true,     // press keys mid-sentence as soon as a command is certain (⚡ in the log)
+  "chunkMs": 50,             // mic buffer size; smaller reaches the server sooner
+  "keyHoldMs": 35,           // how long each tap is held; games need >= 1 frame (~17 ms at 60 fps)
+
+  // These work in every preset.
+  "dictationPrefixes": [ "type" ],            // "type hello there" types "hello there"
+  "fillerWords": [ "then", "and", "please" ], // allowed between chained commands
+  "pausePhrases": [ "stop listening" ],
+  "resumePhrases": [ "start listening" ]
+}
