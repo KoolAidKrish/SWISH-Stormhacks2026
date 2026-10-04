@@ -15,6 +15,12 @@
     <PackageReference Include="OpenCvSharp4" Version="4.10.0.20241108" />
   </ItemGroup>
 
+  <!-- Ship the models next to the build output, so a host app (SWISH.App) can find them without
+       relying on the working directory. The console app still reads model/ from its working dir. -->
+  <ItemGroup>
+    <None Update="Model\**\*.onnx;Model\**\*_label.csv" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <!-- Native OpenCV binaries. On Linux/macOS, add the OpenCvSharp4 runtime package for your platform instead. -->
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
     <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.10.0.20241108" />

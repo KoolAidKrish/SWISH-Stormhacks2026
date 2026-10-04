@@ -1,0 +1,82 @@
+{
+  "name": "Minecraft",
+  "switchPhrases": [ "minecraft mode", "minecraft" ],
+  "include": [ "gestures" ],     // voice control for the hand-gesture app, see gestures.json
+  "announce": "Minecraft mode",
+  "speakByDefault": false,       // no voice confirmations mid-game
+
+  // Minecraft Java Edition default controls:
+  //   WASD move · Space jump · Left Ctrl sprint · Left Shift sneak · LMB attack/mine · RMB use/place
+  //   Q drop · E inventory · F swap hands · 1-9 hotbar · T chat · / command · F5 perspective · Tab players
+  // Pairs with hand gestures: your hand aims the camera (hand-mouse, Relative mode), voice does the rest.
+  // If you've rebound anything in-game, change the key names below to match.
+  //
+  // Step programs ("do") and modifiers work exactly like rocket-league.json; see the notes there.
+  //   "forward" = 600 ms of W, "a little forward" ≈ 210 ms, "really long forward" ≈ 2.3 s.
+
+  "modifiers": [
+    { "say": [ "hard", "big", "long", "far", "lot", "a lot", "more" ],                             "scale": 2.2 },
+    { "say": [ "little", "a little", "bit", "a bit", "slight", "slightly", "small", "short",
+               "quick", "tiny", "step", "less" ],                                                  "scale": 0.35 },
+    { "say": [ "really", "very", "super", "extra" ],                                               "intensify": 1.7 }
+  ],
+  "minMs": 30,
+  "maxMs": 8000,
+
+  "commands": [
+
+    // ---- Moving (latched: keeps going until "stop") ----
+    { "say": [ "walk", "go", "keep walking" ],         "do": [ "unlatch s", "unlatch ctrl", "latch w" ] },
+    { "say": [ "run", "sprint" ],                      "do": [ "unlatch s", "latch ctrl+w" ] },
+    { "say": [ "walk back", "back up" ],               "do": [ "unlatch w", "unlatch ctrl", "latch s" ] },
+    { "say": [ "stop", "halt" ],                       "do": [ "release" ] },
+    { "say": [ "sneak", "crouch" ],                    "do": [ "latch shift" ] },
+    { "say": [ "stand up", "stop sneaking" ],          "do": [ "unlatch shift" ] },
+
+    // ---- Moving (timed; scale with modifiers) ----
+    { "say": [ "forward" ],                            "baseMs": 600, "do": [ "hold w {ms}" ] },
+    { "say": [ "back", "backward", "backwards" ],      "baseMs": 600, "do": [ "hold s {ms}" ] },
+    { "say": [ "left", "strafe left" ],                "baseMs": 400, "do": [ "hold a {ms}" ] },
+    { "say": [ "right", "strafe right" ],              "baseMs": 400, "do": [ "hold d {ms}" ] },
+    { "say": [ "jump" ],                               "keys": [ "space" ], "holdMs": 60 },
+    { "say": [ "jump forward", "hop forward" ],        "do": [ "down w", "tap space 60", "wait 500", "up w" ] },
+    { "say": [ "swim up", "climb" ],                   "baseMs": 1500, "do": [ "hold space {ms}" ] },
+
+    // ---- Hands ----
+    { "say": [ "mine", "break", "dig" ],               "baseMs": 1500, "do": [ "hold lmb {ms}" ] },
+    { "say": [ "keep mining", "keep digging" ],        "do": [ "latch lmb" ] },
+    { "say": [ "stop mining", "stop digging" ],        "do": [ "unlatch lmb" ] },
+    { "say": [ "attack", "hit", "punch" ],             "keys": [ "lmb" ], "holdMs": 50 },
+    { "say": [ "place", "use", "open" ],               "keys": [ "rmb" ], "holdMs": 50 },
+    { "say": [ "eat", "drink" ],                       "do": [ "hold rmb 1800" ] },            // eating takes 1.6 s
+    { "say": [ "shoot", "draw", "pull" ],              "baseMs": 1100, "do": [ "hold rmb {ms}" ] }, // bow: full charge ~1 s
+    { "say": [ "block", "shield" ],                    "baseMs": 1500, "do": [ "hold rmb {ms}" ] },
+    { "say": [ "pick block" ],                         "keys": [ "mmb" ] },
+
+    // ---- Items ----
+    { "say": [ "inventory", "close inventory" ],       "keys": [ "e" ] },
+    { "say": [ "drop", "drop item" ],                  "keys": [ "q" ] },
+    { "say": [ "drop stack", "drop all" ],             "keys": [ "ctrl+q" ] },
+    { "say": [ "swap hands", "offhand" ],              "keys": [ "f" ] },
+
+    // ---- Hotbar (the recognizer may write numbers as digits or words, so both are listed) ----
+    { "say": [ "slot one", "slot 1" ],                 "keys": [ "1" ] },
+    { "say": [ "slot two", "slot 2" ],                 "keys": [ "2" ] },
+    { "say": [ "slot three", "slot 3" ],               "keys": [ "3" ] },
+    { "say": [ "slot four", "slot 4" ],                "keys": [ "4" ] },
+    { "say": [ "slot five", "slot 5" ],                "keys": [ "5" ] },
+    { "say": [ "slot six", "slot 6" ],                 "keys": [ "6" ] },
+    { "say": [ "slot seven", "slot 7" ],               "keys": [ "7" ] },
+    { "say": [ "slot eight", "slot 8" ],               "keys": [ "8" ] },
+    { "say": [ "slot nine", "slot 9" ],                "keys": [ "9" ] },
+
+    // ---- Game ----
+    { "say": [ "chat", "open chat" ],                  "keys": [ "t" ] },
+    { "say": [ "command" ],                            "keys": [ "slash" ] },
+    { "say": [ "send", "enter" ],                      "keys": [ "enter" ] },
+    { "say": [ "menu", "pause game", "escape" ],       "keys": [ "esc" ] },
+    { "say": [ "perspective", "third person", "first person" ], "keys": [ "f5" ] },
+    { "say": [ "players", "player list" ],             "do": [ "hold tab 2000" ] },
+    { "say": [ "screenshot" ],                         "keys": [ "f2" ] }
+  ]
+}

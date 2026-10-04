@@ -1,0 +1,52 @@
+{
+  "name": "Desktop",
+  "switchPhrases": [ "desktop mode", "desktop" ],
+  "include": [ "gestures" ],     // voice control for the hand-gesture app, see gestures.json
+
+  // Each command: phrases you can say -> what happens.
+  //   Simple:  "keys": [ "ctrl+a", "ctrl+c" ]          chords tapped in order (optional "holdMs")
+  //   Full:    "do":   [ "latch w", "wait 100", ... ]  a step program (see rocket-league.json)
+  //   Extras:  "text": "typed after the keys",  "speak": "custom confirmation" ("" = silent)
+  // Key names: ctrl shift alt win enter tab esc space backspace delete up down left right
+  //            home end pageup pagedown f1-f24 a-z 0-9 volumeup volumedown mute playpause nexttrack prevtrack
+  //            lmb rmb mmb mouse4 mouse5
+  "commands": [
+
+    { "say": [ "enter", "submit" ],          "keys": [ "enter" ] },
+    { "say": [ "escape", "cancel" ],         "keys": [ "esc" ] },
+    { "say": [ "backspace" ],                "keys": [ "backspace" ] },
+    { "say": [ "delete word" ],              "keys": [ "ctrl+backspace" ] },
+    { "say": [ "new line" ],                 "keys": [ "shift+enter" ] },
+
+    { "say": [ "up" ],                       "keys": [ "up" ] },
+    { "say": [ "down" ],                     "keys": [ "down" ] },
+    { "say": [ "left" ],                     "keys": [ "left" ] },
+    { "say": [ "right" ],                    "keys": [ "right" ] },
+    { "say": [ "page up" ],                  "keys": [ "pageup" ] },
+    { "say": [ "page down" ],                "keys": [ "pagedown" ] },
+    { "say": [ "go to top", "top" ],         "keys": [ "ctrl+home" ] },
+    { "say": [ "go to bottom", "bottom" ],   "keys": [ "ctrl+end" ] },
+
+    { "say": [ "new tab" ],                  "keys": [ "ctrl+t" ] },
+    { "say": [ "close tab" ],                "keys": [ "ctrl+w" ] },
+    { "say": [ "reopen tab" ],               "keys": [ "ctrl+shift+t" ] },
+    { "say": [ "next tab" ],                 "keys": [ "ctrl+tab" ] },
+    { "say": [ "previous tab", "last tab" ], "keys": [ "ctrl+shift+tab" ] },
+    { "say": [ "refresh", "reload" ],        "keys": [ "f5" ] },
+    { "say": [ "go back" ],                  "keys": [ "alt+left" ] },
+    { "say": [ "go forward" ],               "keys": [ "alt+right" ] },
+
+    { "say": [ "switch window" ],            "keys": [ "alt+tab" ] },
+    { "say": [ "show desktop" ],             "keys": [ "win+d" ] },
+    { "say": [ "screenshot" ],               "keys": [ "win+shift+s" ] },
+
+    { "say": [ "volume up", "louder" ],      "keys": [ "volumeup", "volumeup", "volumeup" ] },
+    { "say": [ "volume down", "quieter" ],   "keys": [ "volumedown", "volumedown", "volumedown" ] },
+    { "say": [ "mute" ],                     "keys": [ "mute" ] },
+    { "say": [ "play", "pause" ],            "keys": [ "playpause" ] },
+    { "say": [ "next song", "skip" ],        "keys": [ "nexttrack" ] },
+
+    // Text-only command (keys can be empty): a canned snippet.
+    { "say": [ "sign off" ],                 "keys": [ ], "text": "Thanks,\nKrish" }
+  ]
+}

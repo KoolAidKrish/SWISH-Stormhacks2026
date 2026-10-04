@@ -13,7 +13,14 @@ internal static class OnnxSessionFactory
         var options = new SessionOptions
         {
             LogSeverityLevel = OrtLoggingLevel.ORT_LOGGING_LEVEL_ERROR,
+            // These models take a few ms each; more threads don't help them, they just burn cores.
+            IntraOpNumThreads = 2,
+            InterOpNumThreads = 1,
         };
+        // By default ORT's worker threads spin-wait between runs, which kept ~8 cores busy at 30 fps.
+        // Let them sleep instead: same inference speed, a fraction of the CPU.
+        options.AddSessionConfigEntry("session.intra_op.allow_spinning", "0");
+        options.AddSessionConfigEntry("session.inter_op.allow_spinning", "0");
 
         if (tryCuda)
         {
