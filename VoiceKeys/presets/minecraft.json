@@ -6,7 +6,7 @@
   "game": { "title": "Minecraft", "tile": "minecraft.png", "order": 1 },
   // What the hand controls do here (left-hand finger keys + right-hand clicks), for the controls screen.
   "handLabels": { "w": "Forward", "a": "Left", "d": "Right", "space": "Jump", "s": "Back",
-                  "lmb": "Attack / mine", "rmb": "Use / place" },
+                  "lmb": "Attack / mine", "rmb": "Use / place", "scroll": "Hotbar slot" },
   "speakByDefault": false,       // no voice confirmations mid-game
 
   // Minecraft Java Edition default controls:

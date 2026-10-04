@@ -80,9 +80,9 @@
                     <ListBox x:Name="Games" Background="Transparent" BorderThickness="0" SelectionChanged="OnGameChanged"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled"
                              AutomationProperties.Name="My games" KeyboardNavigation.TabNavigation="Once" />
-                    <!-- Adding games isn't built yet; the button is here so the place for it exists. -->
+                    <!-- Adding games/apps isn't built yet; the button is here so the place for it exists. -->
                     <Button x:Name="MoreGamesButton" Click="OnMoreGames" HorizontalAlignment="Stretch" Height="48" Margin="0,2,0,0"
-                            BorderBrush="{StaticResource Dim}" Foreground="{StaticResource Gray}" AutomationProperties.Name="Add more games">
+                            BorderBrush="{StaticResource Dim}" Foreground="{StaticResource Gray}" AutomationProperties.Name="More: add games and apps">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Grid Background="Transparent">
@@ -100,7 +100,7 @@
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>
                         </Button.Template>
-                        <TextBlock Text="+  MORE GAMES" FontFamily="{StaticResource DisplayFont}" FontWeight="Bold" FontSize="18" />
+                        <TextBlock Text="+  MORE" FontFamily="{StaticResource DisplayFont}" FontWeight="Bold" FontSize="18" />
                     </Button>
                 </StackPanel>
             </ScrollViewer>

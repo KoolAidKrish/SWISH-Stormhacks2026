@@ -79,6 +79,7 @@ public partial class ControlsPage : UserControl, ISwishPage
         var actions = new WrapPanel();
         actions.Children.Add(GestureCard("pinch-index", "PINCH THUMB + INDEX", Label("lmb", "Left click"), "LEFT CLICK"));
         actions.Children.Add(GestureCard("pinch-middle", "PINCH THUMB + MIDDLE", Label("rmb", "Right click"), "RIGHT CLICK"));
+        actions.Children.Add(GestureCard("pinch-ring", "PINCH THUMB + RING", Label("scroll", "Scroll"), "MOVE HAND TO SCROLL"));
         actions.Children.Add(GestureCard("fist", "MAKE A FIST", "Lift mouse", "PAUSES THE CURSOR"));
         hand.Children.Add(actions);
 

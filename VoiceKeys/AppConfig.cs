@@ -114,7 +114,7 @@ public sealed class Preset
 
     /// <summary>
     /// What the hand controls do in this game, by key: the left-hand finger keys (space, d, w, a, s) and the
-    /// right-hand clicks (lmb, rmb). Shown on the controls screen, e.g. { "w": "Forward", "lmb": "Attack" }.
+    /// right-hand clicks and scroll pinch (lmb, rmb, scroll). Shown on the controls screen, e.g. { "w": "Forward", "lmb": "Attack" }.
     /// </summary>
     public Dictionary<string, string> HandLabels { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
