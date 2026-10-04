@@ -29,6 +29,14 @@ it back; right-click for hand mouse, voice, preset, recalibrate, exit).
 First run opens a full-screen calibration: hold your hand still on each target. It's saved to
 `%LOCALAPPDATA%\SWISH\calibration.json`; **Recalibrate…** redoes it.
 
+**Follow the dot…** is the alternative: a dot snakes across the screen row by row for ~30 s and you
+follow it with your palm along the highlighted line. The camera view fills the screen behind it, and
+the border turns green while your hand is tracked (red when it isn't). No holding still (easier with an unsteady hand), and the mapping is fitted from
+hundreds of samples across the whole screen. It measures how far your hand trails the dot and
+corrects for it, drops frames where tracking glitched, and refuses to save a bad run (hand lost too
+often, hand barely moved, path not followed) with a message saying why. In the console app, press
+`p` (or start with `--calibrate_pursuit`); `c` is still the 9-point one.
+
 **Ctrl+Alt+M** hand mouse on/off · **Ctrl+Alt+J** mouse mode · **Ctrl+Alt+V** show/hide window · **Ctrl+Alt+Q** quit.
 
 ### How it fits together

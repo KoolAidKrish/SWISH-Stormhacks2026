@@ -12,6 +12,7 @@ internal sealed record AppArgs(
     double MinDetectionConfidence,
     bool DisableImageFlip,
     bool Calibrate,
+    bool CalibratePursuit,
     bool ShowWindow)
 {
     public static AppArgs Parse(string[] argv)
@@ -23,6 +24,7 @@ internal sealed record AppArgs(
         double minDetectionConfidence = 0.6;
         bool disableImageFlip = false;
         bool calibrate = false;
+        bool calibratePursuit = false;
         bool showWindow = false;
 
         for (int i = 0; i < argv.Length; i++)
@@ -49,6 +51,11 @@ internal sealed record AppArgs(
                 case "-cal":
                 case "--calibrate":
                     calibrate = true;
+                    break;
+                case "-calp":
+                case "--calibrate_pursuit":
+                    calibrate = true;
+                    calibratePursuit = true;
                     break;
                 case "-d":
                 case "--device":
@@ -79,7 +86,7 @@ internal sealed record AppArgs(
             }
         }
 
-        return new AppArgs(device, image, width, height, minDetectionConfidence, disableImageFlip, calibrate, showWindow);
+        return new AppArgs(device, image, width, height, minDetectionConfidence, disableImageFlip, calibrate, calibratePursuit, showWindow);
     }
 }
 
@@ -115,6 +122,7 @@ internal static class Program
             MinDetectionConfidence = args.MinDetectionConfidence,
             DisableImageFlip = args.DisableImageFlip,
             Calibrate = args.Calibrate,
+            CalibrationKind = args.CalibratePursuit ? CalibrationKind.Pursuit : CalibrationKind.Points,
             ShowWindow = args.ShowWindow,
             UseOpenCvWindow = true,
             // Relative to the working directory, as before: model/, calibration.json, output.mp4

@@ -46,7 +46,8 @@
         <DockPanel Margin="0,0,0,10">
             <Button x:Name="HandMouseButton" Content="Hand mouse" Click="OnToggleHandMouse" />
             <Button x:Name="MouseModeButton" Content="Mode" Click="OnCycleMouseMode" />
-            <Button Content="Recalibrate…" Click="OnRecalibrate" />
+            <Button Content="Recalibrate…" Click="OnRecalibrate" ToolTip="Hold your hand still on 9 targets" />
+            <Button Content="Follow the dot…" Click="OnRecalibratePursuit" ToolTip="Calibrate by following a moving dot for ~20 s" />
             <TextBlock x:Name="GestureBanner" VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold" />
         </DockPanel>
 

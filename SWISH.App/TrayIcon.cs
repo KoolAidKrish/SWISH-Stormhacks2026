@@ -12,7 +12,7 @@ sealed class TrayIcon : IDisposable
     readonly Action<string> _choosePreset;
 
     public TrayIcon(Action showWindow, Action toggleHandMouse, Action toggleVoice, Action<string> choosePreset,
-                    Action recalibrate, Action openPresetsFolder, Action exit)
+                    Action recalibrate, Action recalibratePursuit, Action openPresetsFolder, Action exit)
     {
         _choosePreset = choosePreset;
         _handMouseItem = new Forms.ToolStripMenuItem("Hand mouse  (Ctrl+Alt+M)", null, (_, _) => toggleHandMouse());
@@ -25,7 +25,8 @@ sealed class TrayIcon : IDisposable
         menu.Items.Add(_handMouseItem);
         menu.Items.Add(_voiceItem);
         menu.Items.Add(_presetMenu);
-        menu.Items.Add("Recalibrate hand…", null, (_, _) => recalibrate());
+        menu.Items.Add("Recalibrate hand (9 points)…", null, (_, _) => recalibrate());
+        menu.Items.Add("Recalibrate hand (follow the dot)…", null, (_, _) => recalibratePursuit());
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add("Open presets folder", null, (_, _) => openPresetsFolder());
         menu.Items.Add("Exit", null, (_, _) => exit());

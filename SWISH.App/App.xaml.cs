@@ -80,7 +80,8 @@ public partial class App : Application
             toggleHandMouse: Gestures.ToggleMouse,
             toggleVoice: () => { if (Voice is not null) Voice.Paused = !Voice.Paused; },
             choosePreset: id => { if (Voice?.Config.FindPreset(id) is { } p) Voice.SwitchPreset(p); },
-            recalibrate: () => Gestures.Recalibrate(),
+            recalibrate: () => Gestures.Recalibrate(HandGestureRecognition.Mouse.CalibrationKind.Points),
+            recalibratePursuit: () => Gestures.Recalibrate(HandGestureRecognition.Mouse.CalibrationKind.Pursuit),
             openPresetsFolder: () => Process.Start("explorer.exe", Path.Combine(AppContext.BaseDirectory, "presets")),
             exit: Shutdown);
         if (Voice is not null) _tray.SetPresets(Voice.SwitchablePresets.Select(p => (p.Id, p.Name)));

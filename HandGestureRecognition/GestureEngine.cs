@@ -20,6 +20,8 @@ public sealed class GestureOptions
     public bool DisableImageFlip { get; init; }
     /// <summary>Start with the calibration screen even if a calibration is saved.</summary>
     public bool Calibrate { get; init; }
+    /// <summary>Which calibration runs when one is needed at startup (no saved calibration, or Calibrate).</summary>
+    public CalibrationKind CalibrationKind { get; init; } = CalibrationKind.Points;
     /// <summary>Console mode: Ctrl+Alt+V / "v" toggles an OpenCV debug window. A host with its own UI sets
     /// this false and shows TakePreview() frames instead (it still gets ToggleWindowRequested).</summary>
     public bool UseOpenCvWindow { get; init; } = true;
@@ -74,7 +76,7 @@ public sealed class GestureEngine : IDisposable
 
     // Owned by the loop thread
     private HandMouse? _mouse;
-    private ScreenCalibrator? _calibrator;
+    private ICalibrator? _calibrator;
     private bool _showWindow;
     private int _screenW, _screenH;
 
@@ -118,7 +120,8 @@ public sealed class GestureEngine : IDisposable
         _mouse.CycleMode();   // Relative -> Absolute -> Joystick
         Log?.Invoke($"Mouse mode: {_mouse.Mode}");
     });
-    public void Recalibrate() => Post(StartCalibration);
+    /// <param name="kind">Points = hold still on 9 targets; Pursuit = follow a moving dot.</param>
+    public void Recalibrate(CalibrationKind kind = CalibrationKind.Points) => Post(() => StartCalibration(kind));
 
     /// <summary>Starts the loop on a background thread.</summary>
     public void Start()
@@ -190,7 +193,7 @@ public sealed class GestureEngine : IDisposable
         (_screenW, _screenH) = NativeMouse.PrimaryScreenSize();
         var calib = CalibrationData.TryLoad(_opt.CalibrationPath, _screenW, _screenH);
         _calibrator = (calib is null || _opt.Calibrate)
-            ? new ScreenCalibrator(_screenW, _screenH)
+            ? CreateCalibrator(_opt.CalibrationKind)
             : null;
         _mouse = _calibrator is null ? CreateMouse(calib!) : null;
         var mouseClock = Stopwatch.StartNew();
@@ -292,7 +295,11 @@ public sealed class GestureEngine : IDisposable
                 }
                 if (key == 'c' && _calibrator is null)
                 {
-                    StartCalibration(); // recalibrate
+                    StartCalibration(CalibrationKind.Points); // recalibrate
+                }
+                if (key == 'p' && _calibrator is null)
+                {
+                    StartCalibration(CalibrationKind.Pursuit); // recalibrate by following a moving dot
                 }
 
                 // Camera capture ################################################
@@ -600,7 +607,9 @@ public sealed class GestureEngine : IDisposable
                     {
                         calib = _calibrator.Result!;
                         calib.Save(_opt.CalibrationPath);
-                        Log?.Invoke($"Calibration saved (avg error {calib.MeanErrorPx:F0}px)");
+                        Log?.Invoke(_calibrator is PursuitCalibrator pursuit
+                            ? $"Calibration saved ({pursuit.Summary})"
+                            : $"Calibration saved (avg error {calib.MeanErrorPx:F0}px)");
                         _calibrator.Dispose();
                         _calibrator = null;
                         _mouse = CreateMouse(calib);
@@ -663,7 +672,7 @@ public sealed class GestureEngine : IDisposable
         }
     }
 
-    private void StartCalibration()
+    private void StartCalibration(CalibrationKind kind)
     {
         if (_calibrator is not null) return;
         _mouse?.Dispose();   // stops its output thread too
@@ -672,8 +681,14 @@ public sealed class GestureEngine : IDisposable
         {
             Cv2.DestroyWindow(MainWindow); // don't let it cover the calibration screen
         }
-        _calibrator = new ScreenCalibrator(_screenW, _screenH);
+        _calibrator = CreateCalibrator(kind);
     }
+
+    private ICalibrator CreateCalibrator(CalibrationKind kind) => kind switch
+    {
+        CalibrationKind.Pursuit => new PursuitCalibrator(_screenW, _screenH),
+        _ => new ScreenCalibrator(_screenW, _screenH),
+    };
 
     /// <summary>All mouse tuning lives here; used at startup and after every calibration.</summary>
     private static HandMouse CreateMouse(CalibrationData calib) =>
