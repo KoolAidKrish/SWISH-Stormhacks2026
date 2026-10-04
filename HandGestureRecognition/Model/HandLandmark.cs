@@ -14,6 +14,8 @@ public readonly record struct RotatedImageSizeLeftRight(int RotatedImageWidth, i
 public sealed class HandLandmark : IDisposable
 {
     private readonly InferenceSession _session;
+    /// <summary>True if the model runs on the GPU (DirectML); false if on the CPU (asked for, or fallback).</summary>
+    public bool OnGpu { get; }
     private readonly string _inputName;
     private readonly string[] _outputNames;
     private readonly int _inputH;
@@ -23,10 +25,11 @@ public sealed class HandLandmark : IDisposable
     public HandLandmark(
         string modelPath = "model/hand_landmark/hand_landmark_sparse_Nx3x224x224.onnx",
         float classScoreTh = 0.50f,
-        bool tryCuda = true)
+        int? gpuAdapter = null)
     {
         _classScoreTh = classScoreTh;
-        _session = OnnxSessionFactory.Create(modelPath, tryCuda);
+        _session = OnnxSessionFactory.Create(modelPath, gpuAdapter, out bool onGpu);
+        OnGpu = onGpu;
         _inputName = _session.InputNames[0];
         var dims = _session.InputMetadata[_inputName].Dimensions; // [N, 3, 224, 224]
         _inputH = dims[2];

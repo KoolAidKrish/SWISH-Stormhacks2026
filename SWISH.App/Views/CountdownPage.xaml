@@ -1,0 +1,21 @@
+<UserControl x:Class="Swish.App.Views.CountdownPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Swish.App.Controls"
+             Background="Black">
+    <Grid>
+        <c:CameraFeedView Look="Grayscale" Blur="28" ShowSkeleton="False" />
+        <Rectangle Fill="#66000000" />
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+            <TextBlock Text="CALIBRATION STARTS IN..." Style="{StaticResource Display}" FontWeight="Bold" FontSize="44"
+                       HorizontalAlignment="Center" />
+            <TextBlock x:Name="Number" Text="3" Style="{StaticResource Display}" FontSize="300" LineHeight="270"
+                       LineStackingStrategy="BlockLineHeight" HorizontalAlignment="Center" Margin="0,0,0,24"
+                       AutomationProperties.LiveSetting="Assertive" />
+            <Button x:Name="CancelButton" Click="OnCancel" HorizontalAlignment="Center" FontSize="15" Padding="12,6"
+                    AutomationProperties.Name="Cancel calibration">
+                <TextBlock Text="✕  CANCEL" />
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>

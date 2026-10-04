@@ -40,6 +40,37 @@ public sealed class Speaker : IDisposable
         _out.Play();
     }
 
+    /// <summary>Muted: lines are silently skipped (nothing generated or played).</summary>
+    public bool Muted { get; set; }
+
+    /// <summary>Speaks in another ElevenLabs voice from now on. Lines are re-made in it as they're needed (cached per voice).</summary>
+    public void ChangeVoice(string voiceId)
+    {
+        if (voiceId == _s.VoiceId) return;
+        _s.VoiceId = voiceId;
+        _clips.Clear();
+    }
+
+    public sealed record VoiceInfo(string Id, string Name, string? Description);
+
+    /// <summary>The voices this API key can use (premade + the user's own), from ElevenLabs.</summary>
+    public async Task<IReadOnlyList<VoiceInfo>> ListVoicesAsync(CancellationToken ct)
+    {
+        using var res = await _http.GetAsync("v1/voices", ct);
+        res.EnsureSuccessStatusCode();
+        using var doc = await System.Text.Json.JsonDocument.ParseAsync(await res.Content.ReadAsStreamAsync(ct), cancellationToken: ct);
+        var list = new List<VoiceInfo>();
+        foreach (var v in doc.RootElement.GetProperty("voices").EnumerateArray())
+        {
+            string? Label(string key) => v.TryGetProperty("labels", out var l) && l.ValueKind == System.Text.Json.JsonValueKind.Object
+                                         && l.TryGetProperty(key, out var x) ? x.GetString() : null;
+            var about = string.Join(", ", new[] { Label("gender"), Label("accent"), Label("descriptive") ?? Label("description") }
+                                          .Where(x => !string.IsNullOrWhiteSpace(x)));
+            list.Add(new VoiceInfo(v.GetProperty("voice_id").GetString()!, v.GetProperty("name").GetString() ?? "?", about.Length > 0 ? about : null));
+        }
+        return list.OrderBy(v => v.Name).ToList();
+    }
+
     /// <summary>True while a line is playing (plus a short echo margin).</summary>
     public bool IsPlaying => Environment.TickCount64 < Interlocked.Read(ref _playingUntilTicks);
 
@@ -58,6 +89,7 @@ public sealed class Speaker : IDisposable
     /// <summary>Plays a line. Lines not preloaded are fetched first, and dropped if that takes too long to still be useful.</summary>
     public void Say(string line)
     {
+        if (Muted) return;
         if (_clips.TryGetValue(line, out var pcm)) { Play(pcm); return; }
         _ = Task.Run(async () =>
         {

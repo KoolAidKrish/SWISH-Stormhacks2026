@@ -14,6 +14,8 @@ namespace HandGestureRecognition;
 public sealed class GestureOptions
 {
     public int Device { get; init; } = 0;
+    /// <summary>Run the hand models on this GPU (DXGI adapter index, via DirectML); null = the CPU.</summary>
+    public int? GpuAdapter { get; init; }
     public string Image { get; init; } = "";
     public int Width { get; init; } = 640;
     public int Height { get; init; } = 480;
@@ -31,6 +33,11 @@ public sealed class GestureOptions
     /// <summary>Folder containing the model/ tree (palm_detection, hand_landmark, ...).</summary>
     public string ModelDir { get; init; } = "model";
     public string CalibrationPath { get; init; } = "calibration.json";
+    /// <summary>
+    /// Open the full-screen calibration automatically when no calibration is saved (console behaviour).
+    /// A host with its own calibration screens turns this off; the mouse stays off until it applies one.
+    /// </summary>
+    public bool CalibrateWhenMissing { get; init; } = true;
     /// <summary>Records the annotated feed here; null = don't record.</summary>
     public string? RecordPath { get; init; }
     /// <summary>
@@ -97,12 +104,17 @@ public sealed class GestureEngine : IDisposable
 
     // Custom gestures
     private IReadOnlyList<CustomGesture> _customGestures = [];
+    private int _device;
+    private int? _gpu;
+    private volatile string _inference = "";
     private readonly GestureTracker _gestureTracker = new();
 
     public GestureEngine(GestureOptions options)
     {
         _opt = options;
         _showWindow = options.UseOpenCvWindow && options.ShowWindow;
+        _device = options.Device;
+        _gpu = options.GpuAdapter;
         _gestureTracker.Started += (g, hand) => CustomGestureStarted?.Invoke(g, hand);
         _gestureTracker.Ended += (g, hand) => CustomGestureEnded?.Invoke(g, hand);
     }
@@ -112,6 +124,53 @@ public sealed class GestureEngine : IDisposable
 
     /// <summary>When true, each annotated frame is kept for <see cref="TakePreview"/>. Off by default (it costs a copy per frame).</summary>
     public bool PreviewEnabled { get; set; }
+
+    /// <summary>
+    /// Preview the plain mirrored camera picture instead of the annotated debug view (boxes, labels, FPS).
+    /// The styled UI draws its own hand skeleton from <see cref="HandsUpdated"/>.
+    /// </summary>
+    public bool PreviewClean { get; set; }
+
+    /// <summary>The camera index in use (OpenCV / Media Foundation order).</summary>
+    public int Device => _device;
+    public int? GpuAdapter => _gpu;
+    /// <summary>Where the hand models actually run: "CPU", "GPU", or "CPU (GPU unavailable)"; "" until loaded.</summary>
+    public string InferenceDevice => _inference;
+
+    /// <summary>
+    /// Uses a calibration made outside the engine (e.g. by the app's own calibration screens):
+    /// saves it to <see cref="GestureOptions.CalibrationPath"/> and turns the hand mouse on with it.
+    /// </summary>
+    public void ApplyCalibration(CalibrationData calibration) => Post(() =>
+    {
+        calibration.Save(_opt.CalibrationPath);
+        _calibrator?.Dispose();
+        _calibrator = null;
+        _mouse?.Dispose();
+        _mouse = CreateMouse(calibration);
+        Log?.Invoke($"Calibration saved (avg error {calibration.MeanErrorPx:F0}px)");
+    });
+
+    /// <summary>Restarts the loop on another camera (blocks for up to a few seconds while the old one closes).</summary>
+    public void SwitchCamera(int device)
+    {
+        if (device == _device && _thread is not null) return;
+        bool wasRunning = _thread is not null;
+        Stop();
+        _device = device;
+        if (wasRunning) Start();
+    }
+
+    /// <summary>Moves the hand models to another GPU (or the CPU, with null). Reloads them: tracking pauses briefly.</summary>
+    public void SwitchGpu(int? adapter)
+    {
+        if (adapter == _gpu && _thread is not null) return;
+        bool wasRunning = _thread is not null;
+        Stop();
+        _gpu = adapter;
+        _inference = "";
+        if (wasRunning) Start();
+    }
 
     /// <summary>Raised (on the loop thread) for status/log lines, e.g. "Mouse control ON".</summary>
     public event Action<string>? Log;
@@ -205,10 +264,10 @@ public sealed class GestureEngine : IDisposable
         string ModelPath(string relative) => Path.Combine(_opt.ModelDir, relative);
 
         // Camera setup ##########################################################
-        using var cap = useImage ? new VideoCapture(_opt.Image) : new VideoCapture(_opt.Device);
+        using var cap = useImage ? new VideoCapture(_opt.Image) : new VideoCapture(_device);
         if (!cap.IsOpened())
         {
-            throw new InvalidOperationException(useImage ? $"Couldn't open {_opt.Image}" : $"Couldn't open camera {_opt.Device}");
+            throw new InvalidOperationException(useImage ? $"Couldn't open {_opt.Image}" : $"Couldn't open camera {_device}");
         }
         cap.Set(VideoCaptureProperties.FrameWidth, capWidth);
         cap.Set(VideoCaptureProperties.FrameHeight, capHeight);
@@ -224,18 +283,21 @@ public sealed class GestureEngine : IDisposable
             new Size(capWidth, capHeight));
 
         // Model loading #########################################################
-        using var palmDetection = new PalmDetection(ModelPath("palm_detection/palm_detection_full_inf_post_192x192.onnx"), scoreThreshold: minDetectionConfidence);
-        using var handLandmark = new HandLandmark(ModelPath("hand_landmark/hand_landmark_sparse_Nx3x224x224.onnx"));
+        // The two heavy models can run on a GPU; the tiny classifiers stay on the CPU (a GPU round trip costs more than they do).
+        using var palmDetection = new PalmDetection(ModelPath("palm_detection/palm_detection_full_inf_post_192x192.onnx"), scoreThreshold: minDetectionConfidence, gpuAdapter: _gpu);
+        using var handLandmark = new HandLandmark(ModelPath("hand_landmark/hand_landmark_sparse_Nx3x224x224.onnx"), gpuAdapter: _gpu);
+        _inference = _gpu is null ? "CPU" : palmDetection.OnGpu && handLandmark.OnGpu ? "GPU" : "CPU (GPU unavailable)";
+        Log?.Invoke($"Hand models on: {_inference}");
         using var keypointClassifier = new KeyPointClassifier(ModelPath("keypoint_classifier/keypoint_classifier.onnx"));
         using var pointHistoryClassifier = new PointHistoryClassifier(ModelPath("point_history_classifier/point_history_classifier_lstm.onnx"));
 
         // Mouse control #########################################################
         (_screenW, _screenH) = NativeMouse.PrimaryScreenSize();
         var calib = CalibrationData.TryLoad(_opt.CalibrationPath, _screenW, _screenH);
-        _calibrator = (calib is null || _opt.Calibrate)
+        _calibrator = (calib is null && _opt.CalibrateWhenMissing) || _opt.Calibrate
             ? CreateCalibrator(_opt.CalibrationKind)
             : null;
-        _mouse = _calibrator is null ? CreateMouse(calib!) : null;
+        _mouse = _calibrator is null && calib is not null ? CreateMouse(calib) : null;
         var mouseClock = Stopwatch.StartNew();
         double lastHandSeen = 0;   // for the idle throttle (seconds on mouseClock)
         long frameIndex = 0;
@@ -730,7 +792,7 @@ public sealed class GestureEngine : IDisposable
 
                 if (PreviewEnabled)
                 {
-                    Interlocked.Exchange(ref _preview, debugImage.Clone())?.Dispose();
+                    Interlocked.Exchange(ref _preview, (PreviewClean ? image : debugImage).Clone())?.Dispose();
                 }
                 Volatile.Write(ref _status, new GestureStatus(
                     Running: true, Fps: fps, Hands: hands.Count, Calibrating: _calibrator is not null,

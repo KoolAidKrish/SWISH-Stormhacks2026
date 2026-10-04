@@ -76,7 +76,7 @@ public partial class MainWindow : Window
     internal void UpdatePreviewFlag()
     {
         bool seen = IsVisible && WindowState != WindowState.Minimized;
-        _app.Gestures.PreviewEnabled = seen || _app.PreviewClaimed;
+        _app.UpdatePreview();
         if (seen) _timer.Start(); else _timer.Stop();
     }
 
@@ -102,7 +102,7 @@ public partial class MainWindow : Window
     void OnCycleMouseMode(object sender, RoutedEventArgs e) => _app.Gestures.CycleMouseMode();
     void OnRecalibrate(object sender, RoutedEventArgs e) => _app.Gestures.Recalibrate(CalibrationKind.Points);
     void OnRecalibratePursuit(object sender, RoutedEventArgs e) => _app.Gestures.Recalibrate(CalibrationKind.Pursuit);
-    void OnCustomFunctions(object sender, RoutedEventArgs e) => _app.ShowCustomFunctions();
+    void OnCustomFunctions(object sender, RoutedEventArgs e) => _app.ShowCommandEditor();
 
     void OnToggleVoice(object sender, RoutedEventArgs e)
     {

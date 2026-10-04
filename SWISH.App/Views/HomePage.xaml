@@ -1,0 +1,41 @@
+<UserControl x:Class="Swish.App.Views.HomePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{StaticResource Bg}">
+    <Grid ClipToBounds="True">
+        <!-- Decorations: vector shapes in four corner layers that stay pinned to their corners on resize. -->
+        <Canvas x:Name="TopLeft" HorizontalAlignment="Left" VerticalAlignment="Top" Width="420" Height="280" IsHitTestVisible="False" />
+        <Canvas x:Name="TopRight" HorizontalAlignment="Right" VerticalAlignment="Top" Width="560" Height="300" IsHitTestVisible="False" />
+        <Canvas x:Name="BottomLeft" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="760" Height="140" IsHitTestVisible="False" />
+        <Canvas x:Name="BottomRight" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="440" Height="520" IsHitTestVisible="False" />
+        <Canvas x:Name="BottomCenter" HorizontalAlignment="Center" VerticalAlignment="Bottom" Width="200" Height="170" Margin="-120,0,0,0" IsHitTestVisible="False" />
+
+        <!-- Wordmark + call to action, scaled as one block -->
+        <Viewbox Stretch="Uniform" MaxWidth="1120" Margin="110,110,110,120" VerticalAlignment="Center">
+            <Grid Width="1000">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <!-- one TextBlock per letter (built in code) so each can float on its own -->
+                    <StackPanel x:Name="Wordmark" Orientation="Horizontal" Margin="0,0,0,10" AutomationProperties.Name="SWISH" />
+                    <TextBlock x:Name="Tagline" Style="{StaticResource Mono}" FontSize="17" TextAlignment="Center" LineHeight="28"
+                               Text="SERIAL · WIRELESS · INTERACTIVE ·&#10;SYSTEM · FOR · HUMANS" />
+                </StackPanel>
+                <StackPanel x:Name="Pitch" Grid.Column="1" VerticalAlignment="Center" Margin="60,0,0,40" HorizontalAlignment="Left">
+                    <TextBlock Style="{StaticResource Mono}" FontSize="20" LineHeight="30" Margin="0,0,0,24"
+                               Text="A touchless control system&#10;for your gaming experience." />
+                    <Button x:Name="StartButton" Style="{StaticResource PrimaryButton}" FontSize="19" Padding="14,8"
+                            Click="OnStart" AutomationProperties.Name="Start calibrating">
+                        <TextBlock Text="START CALIBRATING  →" />
+                    </Button>
+                    <TextBlock x:Name="SkipHint" Style="{StaticResource Mono}" FontSize="13" Foreground="{StaticResource Muted}"
+                               Margin="2,14,0,0" Visibility="Collapsed">
+                        <Hyperlink Click="OnSkip" Foreground="{StaticResource TealText}" FocusVisualStyle="{StaticResource FocusRing}">Already calibrated? Go to controls →</Hyperlink>
+                    </TextBlock>
+                </StackPanel>
+            </Grid>
+        </Viewbox>
+    </Grid>
+</UserControl>

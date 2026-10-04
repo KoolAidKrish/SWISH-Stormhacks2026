@@ -78,6 +78,81 @@ public sealed class VoiceEngine : IAsyncDisposable
     public event Action<string>? Partial;
     /// <summary>Connected/paused/preset/talking changed.</summary>
     public event Action? StateChanged;
+    /// <summary>Microphone loudness, 0..1, for a level meter (audio thread).</summary>
+    public event Action<float>? MicLevel;
+    /// <summary>Every finished utterance as heard, whether or not it matched a command (for UI phrases like "start").</summary>
+    public event Action<string>? Heard;
+
+    private MicCapture? _mic;
+    private volatile bool _suspended;
+    private volatile bool _micOff;
+    private TaskCompletionSource _micOn = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    /// <summary>
+    /// Mic off: nothing is recorded or sent. The capture device is closed, the ElevenLabs session ends and
+    /// doesn't reconnect, and held keys are let go. (Unlike <see cref="Paused"/>, which keeps listening so
+    /// "resume" works, this can only be undone from the app.)
+    /// </summary>
+    public bool MicOff
+    {
+        get => _micOff;
+        set
+        {
+            if (_micOff == value) return;
+            _micOff = value;
+            if (value)
+            {
+                _micOn = new(TaskCreationOptions.RunContinuationsAsynchronously);
+                Volatile.Read(ref _mic)?.Stop();
+                _session?.Cancel();
+                KeySender.ReleaseEverything();
+                Emit(VoiceLogKind.Paused, "Microphone off");
+            }
+            else
+            {
+                Volatile.Read(ref _mic)?.Start();
+                _micOn.TrySetResult();
+                Emit(VoiceLogKind.Resumed, "Microphone on");
+            }
+            StateChanged?.Invoke();
+        }
+    }
+
+    /// <summary>
+    /// Quietly stops voice commands from pressing keys (no spoken line, no log), while still reporting
+    /// what's heard via <see cref="Heard"/>. Used on screens that listen for their own words, e.g. "start"
+    /// during calibration, which some game presets also use.
+    /// </summary>
+    public bool Suspended { get => _suspended; set => _suspended = value; }
+    private IReadOnlyList<string> _extraHints = [];
+
+    /// <summary>Extra words to hint the recognizer toward (e.g. phrases a screen listens for). Reconnects.</summary>
+    public void SetExtraHints(IReadOnlyList<string> hints)
+    {
+        _extraHints = hints;
+        _session?.Cancel();
+    }
+
+    /// <summary>Switches to another microphone (index from MicCapture.ListDevices) without restarting.</summary>
+    public void SwitchMic(int device)
+    {
+        _cfg.MicDevice = device;
+        var old = Interlocked.Exchange(ref _mic, null);
+        if (old is null) return;                      // not running yet; RunAsync will use the new index
+        old.Stop();
+        old.Dispose();
+        var mic = CreateMic();
+        if (!_micOff) mic.Start();
+        Volatile.Write(ref _mic, mic);
+    }
+
+    private MicCapture CreateMic()
+    {
+        var mic = new MicCapture(_cfg.MicDevice, _cfg.ChunkMs);
+        mic.ChunkAvailable += _router.OnChunk;
+        mic.LevelChanged += level => MicLevel?.Invoke(level);
+        return mic;
+    }
 
     public void SwitchPreset(Preset next)
     {
@@ -117,9 +192,9 @@ public sealed class VoiceEngine : IAsyncDisposable
     {
         if (_speaker is not null) _ = PreloadVoiceLinesAsync(ct);
 
-        using var mic = new MicCapture(_cfg.MicDevice, _cfg.ChunkMs);
-        mic.ChunkAvailable += _router.OnChunk;
-        mic.Start();
+        var firstMic = CreateMic();
+        if (!_micOff) firstMic.Start();
+        Volatile.Write(ref _mic, firstMic);
 
         var ptt = _cfg.PushToTalk;
         using var pushToTalk = ptt.Enabled ? new PushToTalk(ptt.Key) : null;
@@ -138,6 +213,13 @@ public sealed class VoiceEngine : IAsyncDisposable
         {
             while (!ct.IsCancellationRequested)
             {
+                // Mic off: no session at all until it's back on.
+                if (_micOff)
+                {
+                    try { await _micOn.Task.WaitAsync(ct); } catch (OperationCanceledException) { break; }
+                    reconnecting = false;
+                    continue;
+                }
                 await using var client = new ScribeClient();
                 client.PartialTranscript += HandlePartial;
                 client.CommittedTranscript += HandleCommitted;
@@ -155,7 +237,7 @@ public sealed class VoiceEngine : IAsyncDisposable
                 {
                     // Keyterms (recognition hints) are fixed per connection, which is why switching preset reconnects.
                     IEnumerable<string> phrases;
-                    lock (_gate) phrases = _matcher.AllPhrases.ToList();
+                    lock (_gate) phrases = _extraHints.Concat(_matcher.AllPhrases).ToList();
                     await client.ConnectAsync(_apiKey, _cfg.Scribe, manualCommit: ptt.Enabled, phrases, _session.Token);
                     connectedAt = DateTime.UtcNow;
                     Volatile.Write(ref _current, client);
@@ -176,6 +258,7 @@ public sealed class VoiceEngine : IAsyncDisposable
                 // while (or was closed on purpose) reconnects straight away so it's ready for the next press;
                 // one that failed quickly (bad key, no internet) backs off so we don't hammer the API.
                 if (ct.IsCancellationRequested) break;
+                if (_micOff) continue;   // turned off on purpose: wait above, quietly
                 reconnecting = true;
                 if (_session.IsCancellationRequested || DateTime.UtcNow - connectedAt > TimeSpan.FromSeconds(10))
                 {
@@ -189,10 +272,43 @@ public sealed class VoiceEngine : IAsyncDisposable
         }
         finally
         {
-            mic.Stop();
+            var mic = Interlocked.Exchange(ref _mic, null);
+            mic?.Stop();
+            mic?.Dispose();
             KeySender.ReleaseEverything();
         }
     }
+
+    // ---- Spoken confirmations (Settings › Voice assistant) ----
+
+    /// <summary>False when speech is disabled in settings.json (then the other speech members do nothing).</summary>
+    public bool SpeechAvailable => _speaker is not null;
+    public bool SpeechMuted { get => _speaker?.Muted ?? true; set { if (_speaker is not null) _speaker.Muted = value; } }
+    /// <summary>0..1, applied from the next line.</summary>
+    public double SpeechVolume { get => _cfg.Speech.Volume; set => _cfg.Speech.Volume = Math.Clamp(value, 0, 1); }
+    public string SpeechVoiceId => _cfg.Speech.VoiceId;
+
+    /// <summary>Switches the ElevenLabs voice. Only the active game's lines are made in it now (to spare credits); others as they're used.</summary>
+    public void SetSpeechVoice(string voiceId)
+    {
+        if (_speaker is null || voiceId == _cfg.Speech.VoiceId) return;
+        _speaker.ChangeVoice(voiceId);
+        var p = ActivePreset;
+        var lines = p.Commands.Select(c => SpokenLine(c, p)).Append(p.AnnounceLine)
+            .Append(_cfg.Speech.PausedLine).Append(_cfg.Speech.ResumedLine)
+            .Where(l => !string.IsNullOrWhiteSpace(l)).Select(l => l!).ToList();
+        _ = Task.Run(async () =>
+        {
+            try { await _speaker.PreloadAsync(lines, CancellationToken.None); }
+            catch (Exception ex) { Emit(VoiceLogKind.Error, $"Couldn't make voice lines: {ex.Message}"); }
+        });
+    }
+
+    public Task<IReadOnlyList<Speaker.VoiceInfo>> ListSpeechVoicesAsync(CancellationToken ct) =>
+        _speaker?.ListVoicesAsync(ct) ?? Task.FromResult<IReadOnlyList<Speaker.VoiceInfo>>([]);
+
+    /// <summary>Speaks a line now (e.g. a "test voice" button). Respects mute.</summary>
+    public void SayNow(string line) => Say(line);
 
     private async Task PreloadVoiceLinesAsync(CancellationToken ct)
     {
@@ -218,7 +334,7 @@ public sealed class VoiceEngine : IAsyncDisposable
         List<Invocation>? fire = null;
         lock (_gate)
         {
-            if (_cfg.FireOnPartial && !_paused)
+            if (_cfg.FireOnPartial && !_paused && !_suspended)
             {
                 var sure = _matcher.MatchPartial(text);
                 if (sure.Count > _firedEarly)
@@ -245,9 +361,10 @@ public sealed class VoiceEngine : IAsyncDisposable
             already = _firedEarly;
             _firedEarly = 0;
             if (string.IsNullOrWhiteSpace(transcript)) { Partial?.Invoke(""); return; }
-            result = _matcher.Match(transcript, _paused);
+            result = _suspended ? new MatchResult.None() : _matcher.Match(transcript, _paused);
         }
         Partial?.Invoke("");
+        Heard?.Invoke(transcript);
 
         switch (result)
         {

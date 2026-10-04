@@ -1,7 +1,7 @@
 <Window x:Class="Swish.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="SWISH" Width="1180" Height="720" MinWidth="820" MinHeight="480"
+        Title="SWISH: debug dashboard" Width="1180" Height="720" MinWidth="820" MinHeight="480"
         Background="#15171B" WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <Style TargetType="Button">

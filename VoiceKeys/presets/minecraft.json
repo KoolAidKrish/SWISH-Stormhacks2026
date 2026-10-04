@@ -3,6 +3,10 @@
   "switchPhrases": [ "minecraft mode", "minecraft" ],
   "include": [ "gestures" ],     // voice control for the hand-gesture app, see gestures.json
   "announce": "Minecraft mode",
+  "game": { "title": "Minecraft", "tile": "minecraft.png", "order": 1 },
+  // What the hand controls do here (left-hand finger keys + right-hand clicks), for the controls screen.
+  "handLabels": { "w": "Forward", "a": "Left", "d": "Right", "space": "Jump", "s": "Back",
+                  "lmb": "Attack / mine", "rmb": "Use / place" },
   "speakByDefault": false,       // no voice confirmations mid-game
 
   // Minecraft Java Edition default controls:
@@ -26,57 +30,57 @@
   "commands": [
 
     // ---- Moving (latched: keeps going until "stop") ----
-    { "say": [ "walk", "go", "keep walking" ],         "do": [ "unlatch s", "unlatch ctrl", "latch w" ] },
-    { "say": [ "run", "sprint" ],                      "do": [ "unlatch s", "latch ctrl+w" ] },
-    { "say": [ "walk back", "back up" ],               "do": [ "unlatch w", "unlatch ctrl", "latch s" ] },
-    { "say": [ "stop", "halt" ],                       "do": [ "release" ] },
-    { "say": [ "sneak", "crouch" ],                    "do": [ "latch shift" ] },
-    { "say": [ "stand up", "stop sneaking" ],          "do": [ "unlatch shift" ] },
+    { "category": "Movement", "label": "Walk", "essential": true, "say": [ "walk", "go", "keep walking" ],         "do": [ "unlatch s", "unlatch ctrl", "latch w" ] },
+    { "category": "Movement", "say": [ "run", "sprint" ],                      "do": [ "unlatch s", "latch ctrl+w" ] },
+    { "category": "Movement", "say": [ "walk back", "back up" ],               "do": [ "unlatch w", "unlatch ctrl", "latch s" ] },
+    { "category": "Movement", "essential": true, "say": [ "stop", "halt" ],                       "do": [ "release" ] },
+    { "category": "Movement", "say": [ "sneak", "crouch" ],                    "do": [ "latch shift" ] },
+    { "category": "Movement", "say": [ "stand up", "stop sneaking" ],          "do": [ "unlatch shift" ] },
 
     // ---- Moving (timed; scale with modifiers) ----
-    { "say": [ "forward" ],                            "baseMs": 600, "do": [ "hold w {ms}" ] },
-    { "say": [ "back", "backward", "backwards" ],      "baseMs": 600, "do": [ "hold s {ms}" ] },
-    { "say": [ "left", "strafe left" ],                "baseMs": 400, "do": [ "hold a {ms}" ] },
-    { "say": [ "right", "strafe right" ],              "baseMs": 400, "do": [ "hold d {ms}" ] },
-    { "say": [ "jump" ],                               "keys": [ "space" ], "holdMs": 60 },
-    { "say": [ "jump forward", "hop forward" ],        "do": [ "down w", "tap space 60", "wait 500", "up w" ] },
-    { "say": [ "swim up", "climb" ],                   "baseMs": 1500, "do": [ "hold space {ms}" ] },
+    { "category": "Movement", "say": [ "forward" ],                            "baseMs": 600, "do": [ "hold w {ms}" ] },
+    { "category": "Movement", "say": [ "back", "backward", "backwards" ],      "baseMs": 600, "do": [ "hold s {ms}" ] },
+    { "category": "Movement", "say": [ "left", "strafe left" ],                "baseMs": 400, "do": [ "hold a {ms}" ] },
+    { "category": "Movement", "say": [ "right", "strafe right" ],              "baseMs": 400, "do": [ "hold d {ms}" ] },
+    { "category": "Movement", "say": [ "jump" ],                               "keys": [ "space" ], "holdMs": 60 },
+    { "category": "Movement", "say": [ "jump forward", "hop forward" ],        "do": [ "down w", "tap space 60", "wait 500", "up w" ] },
+    { "category": "Movement", "say": [ "swim up", "climb" ],                   "baseMs": 1500, "do": [ "hold space {ms}" ] },
 
     // ---- Hands ----
-    { "say": [ "mine", "break", "dig" ],               "baseMs": 1500, "do": [ "hold lmb {ms}" ] },
-    { "say": [ "keep mining", "keep digging" ],        "do": [ "latch lmb" ] },
-    { "say": [ "stop mining", "stop digging" ],        "do": [ "unlatch lmb" ] },
-    { "say": [ "attack", "hit", "punch" ],             "keys": [ "lmb" ], "holdMs": 50 },
-    { "say": [ "place", "use", "open" ],               "keys": [ "rmb" ], "holdMs": 50 },
-    { "say": [ "eat", "drink" ],                       "do": [ "hold rmb 1800" ] },            // eating takes 1.6 s
-    { "say": [ "shoot", "draw", "pull" ],              "baseMs": 1100, "do": [ "hold rmb {ms}" ] }, // bow: full charge ~1 s
-    { "say": [ "block", "shield" ],                    "baseMs": 1500, "do": [ "hold rmb {ms}" ] },
-    { "say": [ "pick block" ],                         "keys": [ "mmb" ] },
+    { "category": "Actions", "label": "Mine", "essential": true, "say": [ "mine", "break", "dig" ],               "baseMs": 1500, "do": [ "hold lmb {ms}" ] },
+    { "category": "Actions", "say": [ "keep mining", "keep digging" ],        "do": [ "latch lmb" ] },
+    { "category": "Actions", "say": [ "stop mining", "stop digging" ],        "do": [ "unlatch lmb" ] },
+    { "category": "Actions", "say": [ "attack", "hit", "punch" ],             "keys": [ "lmb" ], "holdMs": 50 },
+    { "category": "Actions", "label": "Place / use", "essential": true, "say": [ "place", "use", "open" ],               "keys": [ "rmb" ], "holdMs": 50 },
+    { "category": "Actions", "say": [ "eat", "drink" ],                       "do": [ "hold rmb 1800" ] },            // eating takes 1.6 s
+    { "category": "Actions", "say": [ "shoot", "draw", "pull" ],              "baseMs": 1100, "do": [ "hold rmb {ms}" ] }, // bow: full charge ~1 s
+    { "category": "Actions", "say": [ "block", "shield" ],                    "baseMs": 1500, "do": [ "hold rmb {ms}" ] },
+    { "category": "Actions", "say": [ "pick block" ],                         "keys": [ "mmb" ] },
 
     // ---- Items ----
-    { "say": [ "inventory", "close inventory" ],       "keys": [ "e" ] },
-    { "say": [ "drop", "drop item" ],                  "keys": [ "q" ] },
-    { "say": [ "drop stack", "drop all" ],             "keys": [ "ctrl+q" ] },
-    { "say": [ "swap hands", "offhand" ],              "keys": [ "f" ] },
+    { "category": "Items", "label": "Inventory", "essential": true, "say": [ "inventory", "close inventory" ],       "keys": [ "e" ] },
+    { "category": "Items", "label": "Drop item", "essential": true, "say": [ "drop", "drop item" ],                  "keys": [ "q" ] },
+    { "category": "Items", "say": [ "drop stack", "drop all" ],             "keys": [ "ctrl+q" ] },
+    { "category": "Items", "say": [ "swap hands", "offhand" ],              "keys": [ "f" ] },
 
     // ---- Hotbar (the recognizer may write numbers as digits or words, so both are listed) ----
-    { "say": [ "slot one", "slot 1" ],                 "keys": [ "1" ] },
-    { "say": [ "slot two", "slot 2" ],                 "keys": [ "2" ] },
-    { "say": [ "slot three", "slot 3" ],               "keys": [ "3" ] },
-    { "say": [ "slot four", "slot 4" ],                "keys": [ "4" ] },
-    { "say": [ "slot five", "slot 5" ],                "keys": [ "5" ] },
-    { "say": [ "slot six", "slot 6" ],                 "keys": [ "6" ] },
-    { "say": [ "slot seven", "slot 7" ],               "keys": [ "7" ] },
-    { "say": [ "slot eight", "slot 8" ],               "keys": [ "8" ] },
-    { "say": [ "slot nine", "slot 9" ],                "keys": [ "9" ] },
+    { "category": "Hotbar", "say": [ "slot one", "slot 1" ],                 "keys": [ "1" ] },
+    { "category": "Hotbar", "say": [ "slot two", "slot 2" ],                 "keys": [ "2" ] },
+    { "category": "Hotbar", "say": [ "slot three", "slot 3" ],               "keys": [ "3" ] },
+    { "category": "Hotbar", "say": [ "slot four", "slot 4" ],                "keys": [ "4" ] },
+    { "category": "Hotbar", "say": [ "slot five", "slot 5" ],                "keys": [ "5" ] },
+    { "category": "Hotbar", "say": [ "slot six", "slot 6" ],                 "keys": [ "6" ] },
+    { "category": "Hotbar", "say": [ "slot seven", "slot 7" ],               "keys": [ "7" ] },
+    { "category": "Hotbar", "say": [ "slot eight", "slot 8" ],               "keys": [ "8" ] },
+    { "category": "Hotbar", "say": [ "slot nine", "slot 9" ],                "keys": [ "9" ] },
 
     // ---- Game ----
-    { "say": [ "chat", "open chat" ],                  "keys": [ "t" ] },
-    { "say": [ "command" ],                            "keys": [ "slash" ] },
-    { "say": [ "send", "enter" ],                      "keys": [ "enter" ] },
-    { "say": [ "menu", "pause game", "escape" ],       "keys": [ "esc" ] },
-    { "say": [ "perspective", "third person", "first person" ], "keys": [ "f5" ] },
-    { "say": [ "players", "player list" ],             "do": [ "hold tab 2000" ] },
-    { "say": [ "screenshot" ],                         "keys": [ "f2" ] }
+    { "category": "Game", "say": [ "chat", "open chat" ],                  "keys": [ "t" ] },
+    { "category": "Game", "say": [ "command" ],                            "keys": [ "slash" ] },
+    { "category": "Game", "say": [ "send", "enter" ],                      "keys": [ "enter" ] },
+    { "category": "Game", "label": "Menu", "essential": true, "say": [ "menu", "pause game", "escape" ],       "keys": [ "esc" ] },
+    { "category": "Game", "say": [ "perspective", "third person", "first person" ], "keys": [ "f5" ] },
+    { "category": "Game", "say": [ "players", "player list" ],             "do": [ "hold tab 2000" ] },
+    { "category": "Game", "say": [ "screenshot" ],                         "keys": [ "f2" ] }
   ]
 }

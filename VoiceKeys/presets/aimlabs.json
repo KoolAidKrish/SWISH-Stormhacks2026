@@ -1,0 +1,34 @@
+{
+  "name": "Aimlabs",
+  "switchPhrases": [ "aimlabs mode", "aim labs", "aimlabs" ],
+  "include": [ "gestures" ],     // voice control for the hand-gesture app, see gestures.json
+  "announce": "Aimlabs mode",
+  "speakByDefault": false,
+  "game": { "title": "Aimlabs", "tile": "aimlabs.png", "order": 2 },
+  // What the hand controls do here (left-hand finger keys + right-hand clicks), for the controls screen.
+  "handLabels": { "w": "Forward", "a": "Left", "s": "Back", "d": "Right", "space": "Jump",
+                  "lmb": "Shoot", "rmb": "Scope / alt fire" },
+
+  // Aimlabs is almost entirely mouse-driven: your hand aims (hand mouse, Relative mode) and a pinch
+  // shoots. Aimlabs doesn't publish its default keybinds, so the keys below follow the usual shooter
+  // layout; check Settings > Controls in Aimlabs and change any that differ.
+  "commands": [
+
+    // ---- Shooting ----
+    { "category": "Shooting", "label": "Shoot", "essential": true, "say": [ "shoot", "fire" ], "keys": [ "lmb" ] },
+    { "category": "Shooting", "label": "Hold fire", "essential": true, "say": [ "hold fire", "spray", "keep shooting" ], "do": [ "latch lmb" ] },
+    { "category": "Shooting", "label": "Stop firing", "essential": true, "say": [ "stop", "cease fire", "stop shooting" ], "do": [ "release" ] },
+    { "category": "Shooting", "label": "Scope", "say": [ "scope", "zoom", "aim" ], "keys": [ "rmb" ] },
+    { "category": "Shooting", "label": "Reload", "say": [ "reload" ], "keys": [ "r" ] },
+
+    // ---- Movement (tasks with movement) ----
+    { "category": "Movement", "label": "Strafe left", "say": [ "left", "strafe left" ], "do": [ "hold a 400" ] },
+    { "category": "Movement", "label": "Strafe right", "say": [ "right", "strafe right" ], "do": [ "hold d 400" ] },
+    { "category": "Movement", "label": "Jump", "say": [ "jump" ], "keys": [ "space" ] },
+    { "category": "Movement", "label": "Crouch", "say": [ "crouch" ], "keys": [ "ctrl" ], "holdMs": 400 },
+
+    // ---- Game ----
+    { "category": "Game", "label": "Pause / menu", "essential": true, "say": [ "pause", "menu", "escape" ], "keys": [ "esc" ] },
+    { "category": "Game", "label": "Confirm", "say": [ "confirm", "okay", "enter" ], "keys": [ "enter" ] }
+  ]
+}

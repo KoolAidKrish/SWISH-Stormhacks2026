@@ -1,0 +1,65 @@
+{
+  "name": "Bloons TD 6",
+  "switchPhrases": [ "bloons mode", "bloons", "bloons td six" ],
+  "include": [ "gestures" ],     // voice control for the hand-gesture app, see gestures.json
+  "announce": "Bloons mode",
+  "speakByDefault": false,
+  "game": { "title": "Bloons TD 6", "tile": "bloons-td-6.png", "order": 4 },
+  // What the hand controls do here (left-hand finger keys + right-hand clicks), for the controls screen.
+  "handLabels": { "space": "Start / fast forward", "w": "Boomerang Monkey", "a": "Wizard Monkey", "s": "Super Monkey",
+                  "d": "Ninja Monkey", "lmb": "Place / select", "rmb": "Cancel placing",
+                  "_left": "Towers" },          // section title for the finger keys (default "Movements")
+
+  // Bloons TD 6 default hotkeys (Bloons wiki): towers Q-Y primary, Z-N military, A-G magic, H-K support;
+  // , . / upgrade paths 1/2/3; Space start round / fast forward; Backspace sell; Tab targeting; Esc pause.
+  // Pick a tower by voice, then place it with a pinch (left click) where your hand points.
+  // Newer towers (Dartling M, Engineer L) follow the same pattern; check in-game if a key doesn't respond.
+  "commands": [
+
+    // ---- Game ----
+    { "category": "Game", "label": "Start / fast forward", "essential": true, "say": [ "start", "go", "fast forward", "speed up", "slow down" ], "keys": [ "space" ] },
+    { "category": "Game", "label": "Pause", "essential": true, "say": [ "pause", "menu", "escape" ], "keys": [ "esc" ] },
+
+    // ---- Upgrades (on the selected tower) ----
+    { "category": "Upgrades", "label": "Upgrade top path", "essential": true, "say": [ "upgrade one", "upgrade top", "top path" ], "keys": [ "comma" ] },
+    { "category": "Upgrades", "label": "Upgrade middle path", "essential": true, "say": [ "upgrade two", "upgrade middle", "middle path" ], "keys": [ "period" ] },
+    { "category": "Upgrades", "label": "Upgrade bottom path", "essential": true, "say": [ "upgrade three", "upgrade bottom", "bottom path" ], "keys": [ "slash" ] },
+    { "category": "Upgrades", "label": "Sell", "essential": true, "say": [ "sell", "sell it", "sell tower" ], "keys": [ "backspace" ] },
+    { "category": "Upgrades", "label": "Change targeting", "say": [ "target", "targeting", "change target" ], "keys": [ "tab" ] },
+
+    // ---- Primary towers ----
+    { "category": "Primary towers", "label": "Dart Monkey", "essential": true, "say": [ "dart monkey", "dart" ], "keys": [ "q" ] },
+    { "category": "Primary towers", "label": "Boomerang Monkey", "say": [ "boomerang monkey", "boomerang" ], "keys": [ "w" ] },
+    { "category": "Primary towers", "label": "Bomb Shooter", "say": [ "bomb shooter", "bomb", "cannon" ], "keys": [ "e" ] },
+    { "category": "Primary towers", "label": "Tack Shooter", "say": [ "tack shooter", "tack" ], "keys": [ "r" ] },
+    { "category": "Primary towers", "label": "Ice Monkey", "say": [ "ice monkey", "ice" ], "keys": [ "t" ] },
+    { "category": "Primary towers", "label": "Glue Gunner", "say": [ "glue gunner", "glue" ], "keys": [ "y" ] },
+
+    // ---- Military towers ----
+    { "category": "Military towers", "label": "Sniper Monkey", "say": [ "sniper monkey", "sniper" ], "keys": [ "z" ] },
+    { "category": "Military towers", "label": "Monkey Sub", "say": [ "monkey sub", "sub", "submarine" ], "keys": [ "x" ] },
+    { "category": "Military towers", "label": "Monkey Buccaneer", "say": [ "buccaneer", "boat", "pirate" ], "keys": [ "c" ] },
+    { "category": "Military towers", "label": "Monkey Ace", "say": [ "monkey ace", "ace", "plane" ], "keys": [ "v" ] },
+    { "category": "Military towers", "label": "Heli Pilot", "say": [ "heli pilot", "heli", "helicopter" ], "keys": [ "b" ] },
+    { "category": "Military towers", "label": "Mortar Monkey", "say": [ "mortar monkey", "mortar" ], "keys": [ "n" ] },
+    { "category": "Military towers", "label": "Dartling Gunner", "say": [ "dartling gunner", "dartling" ], "keys": [ "m" ] },
+
+    // ---- Magic towers ----
+    { "category": "Magic towers", "label": "Wizard Monkey", "say": [ "wizard monkey", "wizard" ], "keys": [ "a" ] },
+    { "category": "Magic towers", "label": "Super Monkey", "say": [ "super monkey", "super" ], "keys": [ "s" ] },
+    { "category": "Magic towers", "label": "Ninja Monkey", "say": [ "ninja monkey", "ninja" ], "keys": [ "d" ] },
+    { "category": "Magic towers", "label": "Alchemist", "say": [ "alchemist", "potion" ], "keys": [ "f" ] },
+    { "category": "Magic towers", "label": "Druid", "say": [ "druid" ], "keys": [ "g" ] },
+
+    // ---- Support towers ----
+    { "category": "Support towers", "label": "Banana Farm", "essential": true, "say": [ "banana farm", "farm", "banana" ], "keys": [ "h" ] },
+    { "category": "Support towers", "label": "Spike Factory", "say": [ "spike factory", "spikes" ], "keys": [ "j" ] },
+    { "category": "Support towers", "label": "Monkey Village", "say": [ "monkey village", "village" ], "keys": [ "k" ] },
+    { "category": "Support towers", "label": "Engineer Monkey", "say": [ "engineer monkey", "engineer" ], "keys": [ "l" ] },
+
+    // ---- Hero & powers ----
+    { "category": "Hero & powers", "label": "Place hero", "essential": true, "say": [ "hero", "place hero" ], "keys": [ "u" ] },
+    { "category": "Hero & powers", "label": "Place another (hold shift)", "say": [ "place another", "keep placing" ], "do": [ "latch shift" ] },
+    { "category": "Hero & powers", "label": "Stop placing", "say": [ "stop placing", "done placing" ], "do": [ "unlatch shift" ] }
+  ]
+}
